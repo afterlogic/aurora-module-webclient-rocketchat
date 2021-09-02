@@ -1,0 +1,27 @@
+<div class="panel_top">
+	<h2 class="settings_heading" data-bind="i18n: {'key': '%MODULENAME%/HEADING_SETTINGS_TAB'}"></h2>
+</div>
+
+<div class="panel_center">
+	<div class="fields">
+		
+		<div class="fieldset">
+			<div class="row">
+				<div class="value" data-bind="i18n: {'key': '%MODULENAME%/INFO_CHAT'}"></div>
+			</div>
+			<div class="row">
+				<span class="label" data-bind="i18n: {'key': '%MODULENAME%/LABEL_CHAT_URL'}"></span>
+				<span class="value" data-bind="text: server"></span>
+			</div>
+			<div class="hint" data-bind="html: credentialsHintText"></div>
+			<div class="hint" data-bind="i18n: {'key': 'COREWEBCLIENT/INFO_DEMO_MOBILE_CREDENTIALS_HTML', 'type': 'html'}, visible: bDemo"></div>
+
+			<br />
+			<br />
+
+			<div class="hint">
+				<a class="link" href="#" target="_blank" data-bind="i18n: {'key': '%MODULENAME%/ACTION_DOWNLOAD'}, attr: {href: sDownloadLink}"></a>
+			</div>
+		</div>
+	</div>
+</div>

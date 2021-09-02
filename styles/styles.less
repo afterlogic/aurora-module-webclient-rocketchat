@@ -1,0 +1,118 @@
+.Chat {
+	.item_viewer {
+		width: 80%;
+		margin: 0px;
+		
+		.post {
+			padding: 2px 30px;
+			width: 93%;
+			font-size: 14px;
+			
+			.name {
+				padding-top: 10px;
+				display: inline-block;
+				color: #a7a7a7;
+			}
+			.time {
+				color: #a7a7a7;
+			}
+			.text {
+				padding: 6px 8px;
+				background-color: #f8f8f8;
+				border-radius: 5px;
+				display: inline-block;
+				min-width: 300px;
+				max-width: 92%;
+				word-wrap: break-word;
+			}
+			.text.own-post-text {
+				background-color: #adf0f3;
+			}
+			.resend {
+				cursor: pointer;
+
+				.icon {
+					display: inline-block;
+					font-size: 24px;
+					height: 24px;
+					width: 24px;
+					text-align: center;
+					vertical-align: middle;
+					font-style: normal;
+					font-weight: normal;
+					font-variant: normal;
+					text-transform: none;
+					line-height: 1;
+					font-family: 'afterlogic';
+					text-shadow: none;
+				}
+
+				.icon::before {
+					content: "\e607";
+					height: 100%;
+					width: 100%;
+					color: #f48585;
+					text-shadow: none;
+					display: inline-block;
+				}
+			}
+
+			.resend.process .icon:before {
+				.animation(cycle 0.8s linear infinite);
+			}
+		}
+
+		.own-post {
+			float: right;
+		}
+	}
+
+	.panel_content {
+		padding: 0px;
+		margin: 0px;
+	}
+	
+	.panel_center {
+		.box-sizing;
+		margin-bottom: -66px;
+		padding-bottom: 66px;
+	}
+	
+	.panel_bottom {
+		padding: 0;
+	}
+	
+	.panel_top {
+		padding: 0px;
+	}
+
+	.toolbar {
+		position: relative;
+		
+		.content {
+			display: inline-block;
+			padding: 0px;
+		}
+	}
+}
+
+.tabsbar .item .unseen-chat {
+  background: rgba(255, 0, 0, 0.6);
+  border-radius: 7px;
+  height: 7px;
+  width: 7px;
+  position: absolute;
+  text-align: center;
+  text-shadow: none;
+  top: -3px;
+  right: -8px;
+}
+
+.panel.left_panel .items_list .item .edit {
+  display: inline-block;
+  float: right;
+  margin-right: 10px;
+  margin-top: 0px;
+  padding: 2px 10px 1px;
+  line-height: 1.3;
+}

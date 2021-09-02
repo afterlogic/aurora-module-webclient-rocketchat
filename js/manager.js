@@ -1,0 +1,98 @@
+'use strict';
+
+module.exports = function (oAppData) {
+	var
+		ko = require('knockout'),
+
+		App = require('%PathToCoreWebclientModule%/js/App.js'),
+
+		Ajax = require('modules/%ModuleName%/js/Ajax.js'),
+		
+		TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
+
+		Settings = require('modules/%ModuleName%/js/Settings.js'),
+		
+		WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),
+		
+		HeaderItemView = null
+	;
+	
+	Settings.init(oAppData);
+	
+	var sAppHash = Settings.AppName ? TextUtils.getUrlFriendlyName(Settings.AppName) : Settings.HashModuleName; 
+	
+	if (App.isUserNormalOrTenant())
+	{
+		var result = {
+			/**
+			 * Returns list of functions that are return module screens.
+			 * 
+			 * @returns {Object}
+			 */
+			getScreens: function ()
+			{
+				var oScreens = {};
+
+				oScreens[Settings.HashModuleName] = function () {
+					return require('modules/%ModuleName%/js/views/MainView.js');
+				};
+				
+				return oScreens;
+			}
+		};
+		if (!App.isNewTab())
+		{
+			result.start = function (ModulesManager) {
+				ModulesManager.run('SettingsWebclient', 'registerSettingsTab', [function () { return require('modules/%ModuleName%/js/views/RocketChatSettingsPaneView.js'); }, Settings.HashModuleName, TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB')]);
+
+				App.subscribeEvent('ContactsWebclient::AddCustomCommand', function (oParams) {
+					oParams.Callback({
+						'Text': TextUtils.i18n('%MODULENAME%/ACTION_CHAT_WITH_CONTACT'),
+						'CssClass': 'chat',
+						'Handler': function () {
+							Ajax.send(
+								'GetLoginForEmail',
+								{'Email': this.email()},
+								function (oResponse) {
+									if (oResponse.Result !== false) {
+										WindowOpener.open('?chat-newtab&direct=' + oResponse.Result, 'Chat');
+									}
+								}
+							);
+						},
+						'Visible': ko.computed(function () { 
+							return oParams.Contact.team() && !oParams.Contact.itsMe()
+						})
+					});
+				});
+			};
+			/**
+			 * Returns object of header item view of the module.
+			 * 
+			 * @returns {Object}
+			 */
+			result.getHeaderItem = function ()
+			{
+				var 
+					CHeaderItemView = require('%PathToCoreWebclientModule%/js/views/CHeaderItemView.js'),
+					oHeaderEntry = 	{};
+				;
+
+				if (HeaderItemView === null)
+				{
+					HeaderItemView = new CHeaderItemView(Settings.AppName || TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB'));
+				}
+				oHeaderEntry = {
+					item: HeaderItemView,
+					name: sAppHash
+				};
+				
+				return oHeaderEntry;
+			}
+		}
+
+		return result;
+	}
+	
+	return null;
+};

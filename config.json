@@ -1,0 +1,18 @@
+{
+    "Disabled": [
+		false,
+		"bool"
+	],
+	"ChatUrl": [
+		"",
+		"string"
+	],
+	"AdminUsername": [
+		"",
+		"string"
+	],
+	"AdminPassword": [
+		"",
+		"string"
+	]
+}
