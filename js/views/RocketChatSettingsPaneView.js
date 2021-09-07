@@ -5,6 +5,7 @@ var
 	$ = require('jquery'),
 	ko = require('knockout'),
 	App = require('%PathToCoreWebclientModule%/js/App.js'),
+	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	
@@ -21,16 +22,28 @@ function CRocketChatSettingsPaneView()
 
 	this.server = Settings.chatUrl();
 	
-	this.bDemo = UserSettings.IsDemo;;
+	this.bDemo = UserSettings.IsDemo;
 
 	this.sDownloadLink = 'https://rocket.chat/install/#download-rocket';
 
-	this.credentialsHintText = App.mobileCredentialsHintText;
+	this.sLogin = ko.observable('');
+
+	this.getLoginForCurrentUser();
+
+	this.credentialsHintText = ko.computed(function () {
+		return TextUtils.i18n('%MODULENAME%/INFO_CREDENTIALS', {'LOGIN': this.sLogin()});
+	}, this);
+}
+
+CRocketChatSettingsPaneView.prototype.getLoginForCurrentUser = function () {
+	Ajax.send('GetLoginForCurrentUser', {}, function(oResponse) {
+		this.sLogin(oResponse.Result);
+	}, this);
 }
 
 /**
  * Name of template that will be bound to this JS-object.
  */
- CRocketChatSettingsPaneView.prototype.ViewTemplate = '%ModuleName%_RocketChatSettingsPaneView';
+CRocketChatSettingsPaneView.prototype.ViewTemplate = '%ModuleName%_RocketChatSettingsPaneView';
 
 module.exports = new CRocketChatSettingsPaneView();

@@ -40,13 +40,16 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->sAdminPass =  $this->getConfig('AdminPassword', '');
 
 		$this->client = new \GuzzleHttp\Client([
-			'base_uri' => $this->sChatUrl
+			'base_uri' => $this->sChatUrl,
+			'verify' => false
 		]);
 		$this->InitChat();
 
-		$this->AddEntry('chat-newtab', 'EntryChatNewTab');
+		$this->AddEntry('chat', 'EntryChat');
+		$this->AddEntry('chat-direct', 'EntryChatDirect');
 
 		$this->subscribeEvent('Login::after', array($this, 'onAfterLogin'), 10);
+		$this->subscribeEvent('Core::Logout::before', array($this, 'onBeforeLogout'));
 	}
 
 	/**
@@ -72,33 +75,35 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return true;
 	}
 
-	public function EntryChatNewTab()
+	public function EntryChatDirect()
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 
-		$oApiIntegrator = \Aurora\System\Managers\Integrator::getInstance();
+		$sEmail = $this->oHttp->GetQuery('chat-direct');
+		$sDirect = $this->GetLoginForEmail($sEmail);
 
-		if ($oApiIntegrator)
-		{
-			\Aurora\Modules\CoreWebclient\Module::Decorator()->SetHtmlOutputHeaders();
-			$aConfig = array(
-				'new_tab' => true,
-				'modules_list' => $oApiIntegrator->GetModulesForEntry($this->GetName())
-			);
+		if ($sDirect) {
+			$this->showChat($this->sChatUrl . 'direct/' . $sDirect . '?layout=embedded');
+		}
+	}
 
-			$oCoreWebclientModule = \Aurora\System\Api::GetModule('CoreWebclient');
-			if ($oCoreWebclientModule instanceof \Aurora\System\Module\AbstractModule)
-			{
-				$sResult = \file_get_contents($oCoreWebclientModule->GetPath().'/templates/Index.html');
-				if (\is_string($sResult))
-				{
-					return strtr($sResult, array(
-						'{{AppVersion}}' => AU_APP_VERSION,
-						'{{IntegratorDir}}' => $oApiIntegrator->isRtl() ? 'rtl' : 'ltr',
-						'{{IntegratorLinks}}' => $oApiIntegrator->buildHeadersLink(),
-						'{{IntegratorBody}}' => $oApiIntegrator->buildBody($aConfig)
-					));
-				}
+	public function EntryChat()
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+
+		$this->showChat($this->sChatUrl);
+	}
+
+	protected function showChat($sUrl)
+	{
+		$oUser = $this->InitChat();
+		if ($oUser) {
+			$sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
+			if (\is_string($sResult)) {
+				echo strtr($sResult, [
+					'{{TOKEN}}' => $oUser->authToken,
+					'{{URL}}' => $sUrl
+				]);
 			}
 		}
 	}
@@ -225,8 +230,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		
 		$oUser = Api::getAuthenticatedUser();
 
-		if ($oUser)
-		{
+		if ($oUser)	{
 			$mResult = $this->createUser($oUser->PublicId);
 		}
 
@@ -260,6 +264,33 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
+	protected function logout()
+	{
+		$mResult = false;
+
+		$oUser = Api::getAuthenticatedUser();
+		if ($oUser) {
+			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
+			if ($oAccount) {
+				try {
+					$res = $this->client->post('api/v1/logout', [
+						'form_params' => [
+							'user' => $this->getUserNameFromEmail($oAccount->getLogin()), 
+							'password' => $oAccount->getPassword()
+						],
+						'http_errors' => false
+					]);
+					if ($res->getStatusCode() === 200) {
+						$mResult = \json_decode($res->getBody());
+					}
+				}
+				catch (ConnectException $oException) {}
+			}
+		}
+
+		return $mResult;
+	}
+
 	public function InitChat()
 	{
 		$mResult = $this->loginCurrentUser();
@@ -276,6 +307,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
+	public function GetLoginForCurrentUser()
+	{
+		$mResult = false;
+
+		$oUser = Api::getAuthenticatedUser();
+		if ($oUser) {
+			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
+			if ($oAccount) {
+				$mResult = $this->getUserNameFromEmail($oAccount->getLogin());
+			}
+		}
+
+		return $mResult;
+	}
+
 	public function GetLoginForEmail($Email)
 	{
 		$mResult = false;
@@ -284,7 +330,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$oUserInfo = $this->createUser($Email);
 		}
 		if ($oUserInfo && $oUserInfo->success) {
-			$mResult = $oUserInfo->user->name;
+			$mResult = $oUserInfo->user->username;
 		}
 
 		return $mResult;
@@ -292,9 +338,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function onAfterLogin(&$aArgs, &$mResult)
 	{
-		if (!$this->getCurrentUserInfo())
-		{
+		if (!$this->getCurrentUserInfo()) {
 			$this->createCurrentUser();
 		}
+	}
+
+	public function onBeforeLogout(&$aArgs, &$mResult)
+	{
 	}
 }

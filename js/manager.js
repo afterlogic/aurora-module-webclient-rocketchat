@@ -45,20 +45,21 @@ module.exports = function (oAppData) {
 			result.start = function (ModulesManager) {
 				ModulesManager.run('SettingsWebclient', 'registerSettingsTab', [function () { return require('modules/%ModuleName%/js/views/RocketChatSettingsPaneView.js'); }, Settings.HashModuleName, TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB')]);
 
+				App.subscribeEvent('Logout', function () {
+						var $chatIframe = $('#rocketchat_iframe').contents().find('#chatIframe');
+						if ($chatIframe && $chatIframe.get(0)) {
+							$chatIframe.get(0).contentWindow.postMessage({
+								externalCommand: 'logout'
+							}, '*');
+						}
+				});
+
 				App.subscribeEvent('ContactsWebclient::AddCustomCommand', function (oParams) {
 					oParams.Callback({
 						'Text': TextUtils.i18n('%MODULENAME%/ACTION_CHAT_WITH_CONTACT'),
 						'CssClass': 'chat',
 						'Handler': function () {
-							Ajax.send(
-								'GetLoginForEmail',
-								{'Email': this.email()},
-								function (oResponse) {
-									if (oResponse.Result !== false) {
-										WindowOpener.open('?chat-newtab&direct=' + oResponse.Result, 'Chat');
-									}
-								}
-							);
+							WindowOpener.open('?chat-direct=' + this.email(), 'Chat');
 						},
 						'Visible': ko.computed(function () { 
 							return oParams.Contact.team() && !oParams.Contact.itsMe()
