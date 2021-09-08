@@ -50,6 +50,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$this->subscribeEvent('Login::after', array($this, 'onAfterLogin'), 10);
 		$this->subscribeEvent('Core::Logout::before', array($this, 'onBeforeLogout'));
+		$this->subscribeEvent('Core::DeleteUser::before', array($this, 'onBeforeDeleteUser'));
 	}
 
 	/**
@@ -345,5 +346,34 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function onBeforeLogout(&$aArgs, &$mResult)
 	{
+	}
+
+	public function onBeforeDeleteUser(&$aArgs, &$mResult)
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+
+		$oAuthenticatedUser = Api::getAuthenticatedUser();
+		if ($oAuthenticatedUser && ($oAuthenticatedUser->Role === \Aurora\System\Enums\UserRole::SuperAdmin || 
+			($oAuthenticatedUser->Role === \Aurora\System\Enums\UserRole::NormalUser && $oAuthenticatedUser->Id === (int) $aArgs['UserId']))) {
+			$oAdmin = $this->getAdminAccount();
+			if ($oAdmin) {
+				try {
+					$res = $this->client->post('api/v1/users.delete', [
+						'form_params' => [
+							'username' => $this->getUserNameFromEmail(\Aurora\Api::getUserPublicIdById($aArgs['UserId']))
+						],
+						'headers' => [
+							"X-Auth-Token" => $oAdmin->data->authToken, 
+							"X-User-Id" => $oAdmin->data->userId,
+						],
+						'http_errors' => false
+					]);
+					if ($res->getStatusCode() === 200) {
+						$mResult = true;
+					}
+				}
+				catch (ConnectException $oException) {}
+			}
+		}
 	}
 }
