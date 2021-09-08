@@ -43,7 +43,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 			'base_uri' => $this->sChatUrl,
 			'verify' => false
 		]);
-		$this->InitChat();
 
 		$this->AddEntry('chat', 'EntryChat');
 		$this->AddEntry('chat-direct', 'EntryChatDirect');
@@ -90,22 +89,18 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function EntryChat()
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-
 		$this->showChat($this->sChatUrl);
 	}
 
 	protected function showChat($sUrl)
 	{
 		$oUser = $this->InitChat();
-		if ($oUser) {
-			$sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
-			if (\is_string($sResult)) {
-				echo strtr($sResult, [
-					'{{TOKEN}}' => $oUser->authToken,
-					'{{URL}}' => $sUrl
-				]);
-			}
+		$sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
+		if (\is_string($sResult)) {
+			echo strtr($sResult, [
+				'{{TOKEN}}' => $oUser ? $oUser->authToken : '',
+				'{{URL}}' => $sUrl
+			]);
 		}
 	}
 
@@ -256,6 +251,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 					]);
 					if ($res->getStatusCode() === 200) {
 						$mResult = \json_decode($res->getBody());
+						// $preferences = $mResult->data->me->settings->preferences;
+						// $preferences->language = 'ru';
+						$res = $this->client->post('api/v1/users.setPreferences', [
+							'form_params' => [
+								'userId' => $mResult->data->userId, 
+								'data' => [
+									"language" => \Aurora\System\Utils::ConvertLanguageNameToShort($oUser->Language)
+								]
+							],
+							'headers' => [
+								"X-Auth-Token" => $mResult->data->authToken, 
+								"X-User-Id" => $mResult->data->userId
+							],
+							'http_errors' => false
+						]);
 					}
 				}
 				catch (ConnectException $oException) {}
