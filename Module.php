@@ -9,6 +9,7 @@ namespace Aurora\Modules\RocketChatWebclient;
 
 use Aurora\Api;
 use Aurora\Modules\Core\Module as CoreModule;
+use Aurora\System\Utils;
 use GuzzleHttp\Exception\ConnectException;
 
 /**
@@ -94,11 +95,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	protected function showChat($sUrl)
 	{
-		$oUser = $this->InitChat();
+		$aUser = $this->InitChat();
 		$sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
 		if (\is_string($sResult)) {
 			echo strtr($sResult, [
-				'{{TOKEN}}' => $oUser ? $oUser->authToken : '',
+				'{{TOKEN}}' => $aUser ? $aUser['authToken'] : '',
 				'{{URL}}' => $sUrl
 			]);
 		}
@@ -309,15 +310,50 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function InitChat()
 	{
-		$mResult = $this->loginCurrentUser();
-		
-		if (!$mResult) {
-			if ($this->createCurrentUser() !== false) {
-				$mResult = $this->loginCurrentUser();
+		$mResult = false;
+		$oUser = Api::getAuthenticatedUser();
+		if ($oUser) {
+			$sAuthToken = $oUser->getExtendedProp($this->GetName() . '::AuthToken', null);
+			$sUserId = $oUser->getExtendedProp($this->GetName() . '::UserId', null);
+			if ($sAuthToken !== null && $sUserId !== null) {
+				try
+				{
+					$res = $this->client->get('api/v1/me', [
+						'headers' => [
+							"X-Auth-Token" => Utils::DecryptValue($sAuthToken), 
+							"X-User-Id" => $sUserId,
+						],
+						'http_errors' => false
+					]);
+					if ($res->getStatusCode() === 200) {
+						$mResult = [
+							'authToken' => Utils::DecryptValue($sAuthToken),
+							'userId' => $sUserId
+						];
+					}
+				}
+				catch (ConnectException $oException) {}
 			}
-		}
-		if ($mResult && isset($mResult->data)) {
-			$mResult = $mResult->data;
+			if (!$mResult) {
+				$mResult = $this->loginCurrentUser();
+		
+				if (!$mResult) {
+					if ($this->createCurrentUser() !== false) {
+						$mResult = $this->loginCurrentUser();
+					}
+				}
+
+				if ($mResult && isset($mResult->data)) {
+
+					$oUser->setExtendedProp($this->GetName() . '::AuthToken', Utils::EncryptValue($mResult->data->authToken));
+					$oUser->setExtendedProp($this->GetName() . '::UserId', $mResult->data->userId);
+					$oUser->save();
+					$mResult = [
+						'authToken' => $mResult->data->authToken,
+						'userId' => $mResult->data->userId
+					];
+				}
+			}
 		}
 
 		return $mResult;
@@ -355,14 +391,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public function GetUnreadCounter()
 	{
 		$mResult = 0;
-		$oCurUser = $this->loginCurrentUser();
-		if ($oCurUser) {
+		$aCurUser = $this->InitChat();
+		if ($aCurUser) {
 			try
 			{
 				$res = $this->client->get('api/v1/subscriptions.get', [
 					'headers' => [
-						"X-Auth-Token" => $oCurUser->data->authToken, 
-						"X-User-Id" => $oCurUser->data->userId,
+						"X-Auth-Token" => $aCurUser['authToken'], 
+						"X-User-Id" => $aCurUser['userId'],
 					],
 					'http_errors' => false
 				]);
