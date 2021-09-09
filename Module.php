@@ -251,21 +251,26 @@ class Module extends \Aurora\System\Module\AbstractModule
 					]);
 					if ($res->getStatusCode() === 200) {
 						$mResult = \json_decode($res->getBody());
-						// $preferences = $mResult->data->me->settings->preferences;
-						// $preferences->language = 'ru';
-						$res = $this->client->post('api/v1/users.setPreferences', [
-							'form_params' => [
-								'userId' => $mResult->data->userId, 
-								'data' => [
-									"language" => \Aurora\System\Utils::ConvertLanguageNameToShort($oUser->Language)
-								]
-							],
-							'headers' => [
-								"X-Auth-Token" => $mResult->data->authToken, 
-								"X-User-Id" => $mResult->data->userId
-							],
-							'http_errors' => false
-						]);
+						$sLang = '';
+						if (isset($mResult->data->me->settings->preferences->language)) {
+							$sLang = $mResult->data->me->settings->preferences->language;
+						}
+						$sUserLang = \Aurora\System\Utils::ConvertLanguageNameToShort($oUser->Language);
+						if ($sUserLang !== $sLang) {
+							$res = $this->client->post('api/v1/users.setPreferences', [
+								'form_params' => [
+									'userId' => $mResult->data->userId, 
+									'data' => [
+										"language" => $sUserLang
+									]
+								],
+								'headers' => [
+									"X-Auth-Token" => $mResult->data->authToken, 
+									"X-User-Id" => $mResult->data->userId
+								],
+								'http_errors' => false
+							]);
+						}
 					}
 				}
 				catch (ConnectException $oException) {}
@@ -342,6 +347,35 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		if ($oUserInfo && $oUserInfo->success) {
 			$mResult = $oUserInfo->user->username;
+		}
+
+		return $mResult;
+	}
+
+	public function GetUnreadCounter()
+	{
+		$mResult = 0;
+		$oCurUser = $this->loginCurrentUser();
+		if ($oCurUser) {
+			try
+			{
+				$res = $this->client->get('api/v1/subscriptions.get', [
+					'headers' => [
+						"X-Auth-Token" => $oCurUser->data->authToken, 
+						"X-User-Id" => $oCurUser->data->userId,
+					],
+					'http_errors' => false
+				]);
+				if ($res->getStatusCode() === 200) {
+					$aResponse = \json_decode($res->getBody(), true);
+					if (is_array($aResponse['update'])) {
+						foreach ($aResponse['update'] as $update) {
+							$mResult += $update['unread'];
+						}
+					}
+				}
+			}
+			catch (ConnectException $oException) {}
 		}
 
 		return $mResult;
