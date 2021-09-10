@@ -5,7 +5,7 @@ var
 	ko = require('knockout'),
 	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
-	
+	WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),	
 	CAbstractHeaderItemView = require('%PathToCoreWebclientModule%/js/views/CHeaderItemView.js')
 ;
 
@@ -14,7 +14,17 @@ function CHeaderItemView()
 	CAbstractHeaderItemView.call(this, TextUtils.i18n('%MODULENAME%/ACTION_SHOW_CHAT'));
 	this.iAutoCheckMailTimer = -1;
 	this.unseenCount = ko.observable(0);
+
+	this.bOpenInNewTab = ko.observable(false);
 	
+	this.mainHref = ko.computed(function () {
+		if (this.bOpenInNewTab())
+		{
+			return 'javascript: void(0);';
+		}
+		return this.hash();
+	}, this);
+
 	this.getUnreadCounter();
 }
 
@@ -37,7 +47,14 @@ CHeaderItemView.prototype.setAutocheckTimer = function ()
 	}
 };
 
+CHeaderItemView.prototype.onChatClick = function (data, event)
+{
+	WindowOpener.open('?chat', 'Chat');
+}
+
 _.extendOwn(CHeaderItemView.prototype, CAbstractHeaderItemView.prototype);
+
+CHeaderItemView.prototype.ViewTemplate = '%ModuleName%_HeaderItemView';
 
 var HeaderItemView = new CHeaderItemView();
 
