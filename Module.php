@@ -326,6 +326,28 @@ class Module extends \Aurora\System\Module\AbstractModule
 						'http_errors' => false
 					]);
 					if ($res->getStatusCode() === 200) {
+						$body = \json_decode($res->getBody(), true);
+						$sLang = '';
+						if (isset($body->settings->preferences->language)) {
+							$sLang = $body->settings->preferences->language;
+						}
+						$sUserLang = \Aurora\System\Utils::ConvertLanguageNameToShort($oUser->Language);
+						if ($sUserLang !== $sLang) {
+							$res = $this->client->post('api/v1/users.setPreferences', [
+								'form_params' => [
+									'userId' => $sUserId, 
+									'data' => [
+										"language" => $sUserLang
+									]
+								],
+								'headers' => [
+									"X-Auth-Token" => Utils::DecryptValue($sAuthToken), 
+									"X-User-Id" => $sUserId
+								],
+								'http_errors' => false
+							]);
+						}
+
 						$mResult = [
 							'authToken' => Utils::DecryptValue($sAuthToken),
 							'userId' => $sUserId
