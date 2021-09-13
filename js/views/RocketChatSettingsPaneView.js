@@ -26,13 +26,13 @@ function CRocketChatSettingsPaneView()
 
 	this.sDownloadLink = 'https://rocket.chat/install/#download-rocket';
 
-	this.sLogin = ko.observable('');
+	// this.sLogin = ko.observable('');
+	// this.getLoginForCurrentUser();
+	// this.credentialsHintText = ko.computed(function () {
+	// 	return TextUtils.i18n('%MODULENAME%/INFO_CREDENTIALS', {'LOGIN': this.sLogin()});
+	// }, this);
 
-	this.getLoginForCurrentUser();
-
-	this.credentialsHintText = ko.computed(function () {
-		return TextUtils.i18n('%MODULENAME%/INFO_CREDENTIALS', {'LOGIN': this.sLogin()});
-	}, this);
+	this.credentialsHintText = App.mobileCredentialsHintText;
 }
 
 CRocketChatSettingsPaneView.prototype.getLoginForCurrentUser = function () {
