@@ -131,29 +131,29 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function EntryChatDirect()
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
-
 		$sEmail = $this->oHttp->GetQuery('chat-direct');
 		$sDirect = $this->GetLoginForEmail($sEmail);
 
 		if ($sDirect) {
-			$this->showChat($this->sChatUrl . 'direct/' . $sDirect . '?layout=embedded');
+			$this->showChat('direct/' . $sDirect . '?layout=embedded');
+		} else {
+			$this->showChat();
 		}
 	}
 
 	public function EntryChat()
 	{
-		$this->showChat($this->sChatUrl);
+		$this->showChat();
 	}
 
-	protected function showChat($sUrl)
+	protected function showChat($sUrl = '')
 	{
 		$aUser = $this->InitChat();
 		$sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
 		if (\is_string($sResult)) {
 			echo strtr($sResult, [
 				'{{TOKEN}}' => $aUser ? $aUser['authToken'] : '',
-				'{{URL}}' => $sUrl
+				'{{URL}}' => $this->sChatUrl . $sUrl
 			]);
 		}
 	}
