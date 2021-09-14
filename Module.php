@@ -58,10 +58,38 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 * 
 	 * @return array
 	 */
-	public function GetSettings()
+	public function GetSettings($TenantId = null)
 	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::Anonymous);
+
+		$sChatUrl = '';
+		$sAdminUsername = '';
+		$iUnreadCounterIntervalInSeconds = 15;
+
+		$oSettings = $this->GetModuleSettings();
+		if (!empty($TenantId))
+		{
+			\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::TenantAdmin);
+			$oTenant = \Aurora\System\Api::getTenantById($TenantId);
+
+			if ($oTenant)
+			{
+				$sChatUrl = $oSettings->GetTenantValue($oTenant->Name, 'ChatUrl', $sChatUrl);		
+				$sAdminUsername = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', $sAdminUsername);
+				$iUnreadCounterIntervalInSeconds = $oSettings->GetTenantValue($oTenant->Name, 'UnreadCounterIntervalInSeconds', $iUnreadCounterIntervalInSeconds);
+			}
+		}
+		else
+		{
+			$sChatUrl = $oSettings->GetValue('ChatUrl', $sChatUrl);		
+			$sAdminUsername = $oSettings->GetValue('AdminUsername', $sAdminUsername);
+			$iUnreadCounterIntervalInSeconds = $oSettings->GetValue('UnreadCounterIntervalInSeconds', $iUnreadCounterIntervalInSeconds);		
+		}
+		
 		return [
-			'ChatUrl' => $this->sChatUrl 
+			'ChatUrl' => $sChatUrl,
+			'AdminUsername' => $sAdminUsername,
+			'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
 		];
 	}
 
@@ -71,9 +99,34 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 * @param boolean $EnableModule indicates if user turned on Chat Module.
 	 * @return boolean
 	 */
-	public function UpdateSettings($EnableModule)
+	public function UpdateSettings($ChatUrl, $AdminUsername, $AdminPassword = null)
 	{
-		return true;
+		$oSettings = $this->GetModuleSettings();
+		if (!empty($TenantId)) {
+			\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::TenantAdmin);
+			$oTenant = \Aurora\System\Api::getTenantById($TenantId);
+
+			if ($oTenant) {
+				$oSettings->SetTenantValue($oTenant->Name, 'ChatUrl', $ChatUrl);		
+				$oSettings->SetTenantValue($oTenant->Name, 'AdminUsername', $AdminUsername);
+				if (isset($AdminPassword)) {
+					$oSettings->SetTenantValue($oTenant->Name, 'AdminPassword', $AdminPassword);
+				}
+		
+				return $oSettings->SaveTenantSettings($oTenant->Name);
+			}
+		}
+		else {
+			\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::SuperAdmin);
+
+			$oSettings->SetValue('ChatUrl', $ChatUrl);		
+			$oSettings->SetValue('AdminUsername', $AdminUsername);
+			if (isset($AdminPassword)) {
+				$oSettings->SetValue('AdminPassword', $AdminPassword);
+			}
+
+			return $oSettings->Save();
+		}
 	}
 
 	public function EntryChatDirect()

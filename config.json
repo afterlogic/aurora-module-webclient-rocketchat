@@ -14,5 +14,9 @@
 	"AdminPassword": [
 		"",
 		"string"
+	],
+	"UnreadCounterIntervalInSeconds": [
+		15,
+		"int"
 	]
 }

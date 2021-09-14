@@ -6,7 +6,8 @@ var
 	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),	
-	CAbstractHeaderItemView = require('%PathToCoreWebclientModule%/js/views/CHeaderItemView.js')
+	CAbstractHeaderItemView = require('%PathToCoreWebclientModule%/js/views/CHeaderItemView.js'),
+	Settings = require('modules/%ModuleName%/js/Settings.js')
 ;
 
 function CHeaderItemView()
@@ -43,7 +44,7 @@ CHeaderItemView.prototype.setAutocheckTimer = function ()
 	{
 		this.iAutoCheckMailTimer = setTimeout(_.bind(function () {
 			this.getUnreadCounter();
-		}, this), 15 * 1000);
+		}, this), Settings.unreadCounterIntervalInSeconds() * 1000);
 	}
 };
 

@@ -19,6 +19,7 @@ module.exports = {
 	enableModule: ko.observable(false),
 
 	chatUrl: ko.observable(''),
+	unreadCounterIntervalInSeconds: ko.observable(15),
 	
 	/**
 	 * Initializes settings from AppData object sections.
@@ -33,6 +34,7 @@ module.exports = {
 		{
 			this.enableModule(Types.pBool(oAppDataSection.EnableModule, this.enableModule()));
 			this.chatUrl(oAppDataSection.ChatUrl, this.chatUrl());
+			this.unreadCounterIntervalInSeconds(Types.pInt(oAppDataSection.UnreadCounterIntervalInSeconds), this.unreadCounterIntervalInSeconds());
 		}
 	},
 	
