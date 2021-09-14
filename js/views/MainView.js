@@ -14,7 +14,7 @@ var
 function CMainView()
 {
 	CAbstractScreenView.call(this, '%ModuleName%');
-	this.sFrameUrl = '?chat';
+	this.sFrameUrl = '?chat&'+ new Date().getTime();
 }
 
 _.extendOwn(CMainView.prototype, CAbstractScreenView.prototype);
