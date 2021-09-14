@@ -59,7 +59,17 @@ module.exports = function (oAppData) {
 						'Text': TextUtils.i18n('%MODULENAME%/ACTION_CHAT_WITH_CONTACT'),
 						'CssClass': 'chat',
 						'Handler': function () {
-							WindowOpener.open('?chat-direct=' + this.email(), 'Chat');
+							var
+								iScreenWidth = window.screen.width,
+								iWidth = 360,
+								iLeft = Math.ceil((iScreenWidth - iWidth) / 2),
+						
+								iScreenHeight = window.screen.height,
+								iHeight = 600,
+								iTop = Math.ceil((iScreenHeight - iHeight) / 2)
+							;
+					
+							WindowOpener.open('?chat-direct=' + this.email(), 'Chat', false, ',width=' + iWidth + ',height=' + iHeight + ',top=' + iTop + ',left=' + iLeft);
 						},
 						'Visible': ko.computed(function () { 
 							return oParams.Contact.team() && !oParams.Contact.itsMe()
