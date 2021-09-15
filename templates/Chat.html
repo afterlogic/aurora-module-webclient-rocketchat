@@ -3,10 +3,14 @@
         <style>body {margin: 0px; }</style>
         <script type='text/javascript'>
             function reroute() {
-                document.querySelector('iframe').contentWindow.postMessage({
-                    externalCommand: 'login-with-token',
-                    token: '{{TOKEN}}'
-                }, '*');
+                var token = '{{TOKEN}}';
+                console.log(token);
+                if (token !== '') {
+                    document.querySelector('iframe').contentWindow.postMessage({
+                        externalCommand: 'login-with-token',
+                        token: token
+                    }, '*');
+                }
             }
         </script>
     </head>

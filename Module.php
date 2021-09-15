@@ -9,6 +9,8 @@ namespace Aurora\Modules\RocketChatWebclient;
 
 use Aurora\Api;
 use Aurora\Modules\Core\Module as CoreModule;
+use Aurora\System\Enums\UserRole;
+use Aurora\System\Exceptions\ApiException;
 use Aurora\System\Utils;
 use GuzzleHttp\Exception\ConnectException;
 
@@ -131,12 +133,18 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function EntryChatDirect()
 	{
-		$sEmail = $this->oHttp->GetQuery('chat-direct');
-		$sDirect = $this->GetLoginForEmail($sEmail);
+		try {
+			Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
+			
+			$sEmail = $this->oHttp->GetQuery('chat-direct');
+			$sDirect = $this->GetLoginForEmail($sEmail);
 
-		if ($sDirect) {
-			$this->showChat('direct/' . $sDirect . '?layout=embedded');
-		} else {
+			if ($sDirect) {
+				$this->showChat('direct/' . $sDirect . '?layout=embedded');
+			} else {
+				$this->showChat();
+			}
+		} catch (ApiException $oEx) {
 			$this->showChat();
 		}
 	}
