@@ -4,7 +4,6 @@
         <script type='text/javascript'>
             function reroute() {
                 var token = '{{TOKEN}}';
-                console.log(token);
                 if (token !== '') {
                     document.querySelector('iframe').contentWindow.postMessage({
                         externalCommand: 'login-with-token',
