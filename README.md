@@ -1,1 +1,1 @@
-# aurora-module-rocketchat-webclient
+# aurora-module-webclient-rocketchat
