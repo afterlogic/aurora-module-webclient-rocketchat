@@ -1,5 +1,5 @@
 {
-	"name": "afterlogic/aurora-module-rocketchat-webclient",
+	"name": "afterlogic/aurora-module-webclient-rocketchat",
 	"type": "aurora-module",
 	"require": {
 		"php": ">=5.4.0",
