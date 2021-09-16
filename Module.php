@@ -12,6 +12,7 @@ use Aurora\Modules\Core\Module as CoreModule;
 use Aurora\System\Enums\UserRole;
 use Aurora\System\Exceptions\ApiException;
 use Aurora\System\Utils;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 
 /**
@@ -42,7 +43,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->sAdminUser =  $this->getConfig('AdminUsername', '');
 		$this->sAdminPass =  $this->getConfig('AdminPassword', '');
 
-		$this->client = new \GuzzleHttp\Client([
+		$this->client = new Client([
 			'base_uri' => $this->sChatUrl,
 			'verify' => false
 		]);
@@ -62,7 +63,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 */
 	public function GetSettings($TenantId = null)
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::Anonymous);
+		Api::checkUserRoleIsAtLeast(UserRole::Anonymous);
 
 		$sChatUrl = '';
 		$sAdminUsername = '';
@@ -71,8 +72,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oSettings = $this->GetModuleSettings();
 		if (!empty($TenantId))
 		{
-			\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::TenantAdmin);
-			$oTenant = \Aurora\System\Api::getTenantById($TenantId);
+			Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
+			$oTenant = Api::getTenantById($TenantId);
 
 			if ($oTenant)
 			{
@@ -105,8 +106,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$oSettings = $this->GetModuleSettings();
 		if (!empty($TenantId)) {
-			\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::TenantAdmin);
-			$oTenant = \Aurora\System\Api::getTenantById($TenantId);
+			Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
+			$oTenant = Api::getTenantById($TenantId);
 
 			if ($oTenant) {
 				$oSettings->SetTenantValue($oTenant->Name, 'ChatUrl', $ChatUrl);		
@@ -119,7 +120,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			}
 		}
 		else {
-			\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::SuperAdmin);
+			Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
 			$oSettings->SetValue('ChatUrl', $ChatUrl);		
 			$oSettings->SetValue('AdminUsername', $AdminUsername);
@@ -156,7 +157,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	protected function showChat($sUrl = '')
 	{
-		$aUser = $this->InitChat();
+		$aUser = $this->initChat();
 		$sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
 		if (\is_string($sResult)) {
 			echo strtr($sResult, [
@@ -317,21 +318,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 						if (isset($mResult->data->me->settings->preferences->language)) {
 							$sLang = $mResult->data->me->settings->preferences->language;
 						}
-						$sUserLang = \Aurora\System\Utils::ConvertLanguageNameToShort($oUser->Language);
+						$sUserLang = Utils::ConvertLanguageNameToShort($oUser->Language);
 						if ($sUserLang !== $sLang) {
-							$res = $this->client->post('api/v1/users.setPreferences', [
-								'form_params' => [
-									'userId' => $mResult->data->userId, 
-									'data' => [
-										"language" => $sUserLang
-									]
-								],
-								'headers' => [
-									"X-Auth-Token" => $mResult->data->authToken, 
-									"X-User-Id" => $mResult->data->userId
-								],
-								'http_errors' => false
-							]);
+							$this->updateLanguage($mResult->data->userId, $mResult->data->authToken, $sUserLang);
 						}
 					}
 				}
@@ -369,7 +358,52 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
-	public function InitChat()
+	protected function updateLanguage($sUserId, $sToken, $sLang)
+	{
+		$this->client->post('api/v1/users.setPreferences', [
+			'form_params' => [
+				'userId' => $sUserId, 
+				'data' => [
+					"language" => $sLang
+				]
+			],
+			'headers' => [
+				"X-Auth-Token" => $sToken, 
+				"X-User-Id" => $sUserId
+			],
+			'http_errors' => false
+		]);
+	}
+
+	protected function updateUserPassword($userInfo)
+	{
+		$mResult = false;
+		$oUser = Api::getAuthenticatedUser();
+		if ($oUser) {
+			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
+			$oAdmin = $this->getAdminAccount();
+			if ($oAccount && $oAdmin) {
+				$res = $this->client->post('api/v1/users.update', [
+					'form_params' => [
+						'userId' => $userInfo->user->_id, 
+						'data' => [
+							"password" => $oAccount->getPassword()
+						]
+					],
+					'headers' => [
+						"X-Auth-Token" => $oAdmin->data->authToken, 
+						"X-User-Id" => $oAdmin->data->userId
+					],
+					'http_errors' => false
+				]);
+				$mResult = ($res->getStatusCode() === 200);
+			}
+		}
+
+		return $mResult;
+	}
+
+	protected function initChat()
 	{
 		$mResult = false;
 		$oUser = Api::getAuthenticatedUser();
@@ -377,11 +411,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$sAuthToken = $oUser->getExtendedProp($this->GetName() . '::AuthToken', null);
 			$sUserId = $oUser->getExtendedProp($this->GetName() . '::UserId', null);
 			if ($sAuthToken !== null && $sUserId !== null) {
+				$sAuthToken = Utils::DecryptValue($sAuthToken);
 				try
 				{
 					$res = $this->client->get('api/v1/me', [
 						'headers' => [
-							"X-Auth-Token" => Utils::DecryptValue($sAuthToken), 
+							"X-Auth-Token" => $sAuthToken, 
 							"X-User-Id" => $sUserId,
 						],
 						'http_errors' => false
@@ -392,25 +427,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 						if (isset($body->settings->preferences->language)) {
 							$sLang = $body->settings->preferences->language;
 						}
-						$sUserLang = \Aurora\System\Utils::ConvertLanguageNameToShort($oUser->Language);
+						$sUserLang = Utils::ConvertLanguageNameToShort($oUser->Language);
 						if ($sUserLang !== $sLang) {
-							$res = $this->client->post('api/v1/users.setPreferences', [
-								'form_params' => [
-									'userId' => $sUserId, 
-									'data' => [
-										"language" => $sUserLang
-									]
-								],
-								'headers' => [
-									"X-Auth-Token" => Utils::DecryptValue($sAuthToken), 
-									"X-User-Id" => $sUserId
-								],
-								'http_errors' => false
-							]);
+							$this->updateLanguage($sUserId, $sAuthToken, $sUserLang);
 						}
 
 						$mResult = [
-							'authToken' => Utils::DecryptValue($sAuthToken),
+							'authToken' => $sAuthToken,
 							'userId' => $sUserId
 						];
 					}
@@ -418,12 +441,16 @@ class Module extends \Aurora\System\Module\AbstractModule
 				catch (ConnectException $oException) {}
 			}
 			if (!$mResult) {
-				$mResult = $this->loginCurrentUser();
-		
-				if (!$mResult) {
-					if ($this->createCurrentUser() !== false) {
-						$mResult = $this->loginCurrentUser();
+				$currentUserInfo = $this->getCurrentUserInfo();
+				if ($currentUserInfo) {
+					$mResult = $this->loginCurrentUser();
+					if (!$mResult) {
+						if ($this->updateUserPassword($currentUserInfo)) {
+							$mResult = $this->loginCurrentUser();
+						}
 					}
+				} elseif ($this->createCurrentUser() !== false) {
+					$mResult = $this->loginCurrentUser();
 				}
 
 				if ($mResult && isset($mResult->data)) {
@@ -474,7 +501,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public function GetUnreadCounter()
 	{
 		$mResult = 0;
-		$aCurUser = $this->InitChat();
+		$aCurUser = $this->initChat();
 		if ($aCurUser) {
 			try
 			{
@@ -513,17 +540,17 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function onBeforeDeleteUser(&$aArgs, &$mResult)
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
 		$oAuthenticatedUser = Api::getAuthenticatedUser();
-		if ($oAuthenticatedUser && ($oAuthenticatedUser->Role === \Aurora\System\Enums\UserRole::SuperAdmin || 
-			($oAuthenticatedUser->Role === \Aurora\System\Enums\UserRole::NormalUser && $oAuthenticatedUser->Id === (int) $aArgs['UserId']))) {
+		if ($oAuthenticatedUser && ($oAuthenticatedUser->Role === UserRole::SuperAdmin || 
+			($oAuthenticatedUser->Role === UserRole::NormalUser && $oAuthenticatedUser->Id === (int) $aArgs['UserId']))) {
 			$oAdmin = $this->getAdminAccount();
 			if ($oAdmin) {
 				try {
 					$res = $this->client->post('api/v1/users.delete', [
 						'form_params' => [
-							'username' => $this->getUserNameFromEmail(\Aurora\Api::getUserPublicIdById($aArgs['UserId']))
+							'username' => $this->getUserNameFromEmail(Api::getUserPublicIdById($aArgs['UserId']))
 						],
 						'headers' => [
 							"X-Auth-Token" => $oAdmin->data->authToken, 
