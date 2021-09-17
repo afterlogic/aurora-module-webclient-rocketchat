@@ -1,7 +1,6 @@
 'use strict';
 
 var
-	ko = require('knockout'),
 	_ = require('underscore'),
 	
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js')
