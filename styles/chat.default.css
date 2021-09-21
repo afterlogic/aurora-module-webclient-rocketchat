@@ -1,13 +1,6 @@
 body, .rc-old.full-page {
   background: transparent;
 }
-.rc-old #login-card {
-  background: transparent;
-  box-shadow: none;
-}
-.rc-old #login-card .rc-input__element {
-  background: white;
-}
 
 .color-primary-font-color {
   color: black;
@@ -74,6 +67,10 @@ body, .rc-old.full-page {
 .rc-popover__content .rcx-divider:last-of-type,
 .rc-popover__content .rcx-divider:last-of-type ~ div {
   display: none;
+}
+.not-iframe .rc-popover__content .rcx-divider:last-of-type,
+.not-iframe .rc-popover__content .rcx-divider:last-of-type ~ div {
+  display: block;
 }
 
 .rcx-sidebar-item, .rcx-sidebar-item__title {
