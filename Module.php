@@ -410,8 +410,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$mResult = false;
 		$oUser = Api::getAuthenticatedUser();
 		if ($oUser) {
-			$sAuthToken = $oUser->getExtendedProp($this->GetName() . '::AuthToken', null);
-			$sUserId = $oUser->getExtendedProp($this->GetName() . '::UserId', null);
+			$sAuthToken = $_COOKIE['RocketChatAuthToken'];
+			$sUserId = $_COOKIE['RocketChatUserId'];
 			if ($sAuthToken !== null && $sUserId !== null) {
 				$sAuthToken = Utils::DecryptValue($sAuthToken);
 				try
@@ -456,9 +456,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 
 				if ($mResult && isset($mResult->data)) {
-
-					$oUser->setExtendedProp($this->GetName() . '::AuthToken', Utils::EncryptValue($mResult->data->authToken));
-					$oUser->setExtendedProp($this->GetName() . '::UserId', $mResult->data->userId);
+					$iAuthTokenCookieExpireTime = (int) \Aurora\System\Api::GetModule('Core')->getConfig('AuthTokenCookieExpireTime', 30);
+					@\setcookie('RocketChatAuthToken', Utils::EncryptValue($mResult->data->authToken),
+							\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
+							null, \Aurora\System\Api::getCookieSecure());
+					@\setcookie('RocketChatUserId', $mResult->data->userId,
+							\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
+							null, \Aurora\System\Api::getCookieSecure());
 					$oUser->save();
 					$mResult = [
 						'authToken' => $mResult->data->authToken,
@@ -538,6 +542,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function onBeforeLogout(&$aArgs, &$mResult)
 	{
+		// RocketChatAuthToken and RocketChatUserId are removed on frontend
+		// because it doesn't wait Logout request to be executed
+		// so the cookies won't be passed on frontend
 	}
 
 	public function onBeforeDeleteUser(&$aArgs, &$mResult)
