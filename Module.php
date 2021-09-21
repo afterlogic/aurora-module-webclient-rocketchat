@@ -392,7 +392,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 					],
 					'headers' => [
 						"X-Auth-Token" => $oAdmin->data->authToken, 
-						"X-User-Id" => $oAdmin->data->userId
+						"X-User-Id" => $oAdmin->data->userId,
+						"X-2fa-code" => hash("sha256", $this->sAdminPass),
+						"X-2fa-method" => "password"
 					],
 					'http_errors' => false
 				]);
