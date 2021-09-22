@@ -11,6 +11,7 @@ module.exports = {
 	HashModuleName: 'chat',
 	
 	СhatUrl: '',
+	ChatAuthToken: '',
 	UnreadCounterIntervalInSeconds: 15,
 	
 	/**
@@ -25,6 +26,7 @@ module.exports = {
 		if (!_.isEmpty(oAppDataSection))
 		{
 			this.СhatUrl = Types.pString(oAppDataSection.ChatUrl);
+			this.ChatAuthToken = Types.pString(oAppDataSection.ChatAuthToken);
 			this.UnreadCounterIntervalInSeconds = Types.pInt(oAppDataSection.UnreadCounterIntervalInSeconds, this.UnreadCounterIntervalInSeconds);
 		}
 	}

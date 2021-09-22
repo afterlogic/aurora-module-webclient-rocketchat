@@ -6,8 +6,6 @@ module.exports = function (oAppData) {
 
 		App = require('%PathToCoreWebclientModule%/js/App.js'),
 
-		Ajax = require('modules/%ModuleName%/js/Ajax.js'),
-		
 		TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 
 		Settings = require('modules/%ModuleName%/js/Settings.js'),
@@ -43,6 +41,10 @@ module.exports = function (oAppData) {
 		if (!App.isNewTab())
 		{
 			result.start = function (ModulesManager) {
+				// init screen so the module could interact with chat in iframe
+				var Screens = require('%PathToCoreWebclientModule%/js/Screens.js');
+				Screens.initHiddenView(Settings.HashModuleName);
+
 				ModulesManager.run('SettingsWebclient', 'registerSettingsTab', [function () { return require('modules/%ModuleName%/js/views/RocketChatSettingsPaneView.js'); }, Settings.HashModuleName, TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB')]);
 
 				App.subscribeEvent('Logout', function () {
@@ -74,7 +76,7 @@ module.exports = function (oAppData) {
 							WindowOpener.open('?chat-direct=' + this.email() + '&' + new Date().getTime(), 'Chat', false, ',width=' + iWidth + ',height=' + iHeight + ',top=' + iTop + ',left=' + iLeft);
 						},
 						'Visible': ko.computed(function () { 
-							return oParams.Contact.team() && !oParams.Contact.itsMe()
+							return oParams.Contact.team() && !oParams.Contact.itsMe();
 						})
 					});
 				});

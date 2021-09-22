@@ -48,7 +48,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			'verify' => false
 		]);
 
-		$this->AddEntry('chat', 'EntryChat');
+//		$this->AddEntry('chat', 'EntryChat');
 		$this->AddEntry('chat-direct', 'EntryChatDirect');
 
 		$this->subscribeEvent('Login::after', array($this, 'onAfterLogin'), 10);
@@ -63,7 +63,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 */
 	public function GetSettings($TenantId = null)
 	{
-		Api::checkUserRoleIsAtLeast(UserRole::Anonymous);
+		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
 		$sChatUrl = '';
 		$sAdminUsername = '';
@@ -89,11 +89,29 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$iUnreadCounterIntervalInSeconds = $oSettings->GetValue('UnreadCounterIntervalInSeconds', $iUnreadCounterIntervalInSeconds);		
 		}
 		
-		return [
-			'ChatUrl' => $sChatUrl,
-			'AdminUsername' => $sAdminUsername,
-			'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
-		];
+		$oUser = \Aurora\System\Api::getAuthenticatedUser();
+		if ($oUser instanceof \Aurora\Modules\Core\Models\User)
+		{
+			if ($oUser->isNormalOrTenant())
+			{
+				$aChatAuthData = $this->initChat();
+				return [
+					'ChatUrl' => $sChatUrl,
+					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : '',
+					'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
+				];
+			}
+			else if ($oUser->Role === \Aurora\System\Enums\UserRole::SuperAdmin)
+			{
+				return [
+					'ChatUrl' => $sChatUrl,
+					'AdminUsername' => $sAdminUsername,
+					'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
+				];
+			}
+		}
+
+		return [];
 	}
 
 	/**
