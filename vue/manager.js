@@ -15,11 +15,12 @@ export default {
         tabName: 'chat',
         title: 'ROCKETCHATWEBCLIENT.ADMIN_SETTINGS_TAB_LABEL',
         component () {
-          return import('./components/RocketChatWebclientAdminSettings')
+          return import('./components/RocketChatAdminSettings')
         },
       },
     ]
   },
+
   getAdminTenantTabs () {
     return [
       {
@@ -32,7 +33,7 @@ export default {
         ],
         title: 'ROCKETCHATWEBCLIENT.ADMIN_SETTINGS_TAB_LABEL',
         component () {
-          return import('./components/RocketChatWebclientAdminSettingsPerTenant')
+          return import('./components/RocketChatAdminSettingsPerTenant')
         },
       }
     ]

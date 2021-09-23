@@ -18,12 +18,14 @@ use GuzzleHttp\Exception\ConnectException;
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
  * @license https://afterlogic.com/products/common-licensing Afterlogic Software License
- * @copyright Copyright (c) 2019, Afterlogic Corp.
+ * @copyright Copyright (c) 2021, Afterlogic Corp.
  *
  * @package Modules
  */
 class Module extends \Aurora\System\Module\AbstractModule
 {
+	public $oRocketChatSettingsManager = null;
+	
 	protected $sChatUrl= "";
 	
 	protected $sAdminUser = "";
@@ -39,6 +41,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function init() 
 	{
+		$this->oRocketChatSettingsManager = new Managers\RocketChatSettings\Manager($this);
+
 		$this->sChatUrl =  $this->getConfig('ChatUrl', '');
 		$this->sAdminUser =  $this->getConfig('AdminUsername', '');
 		$this->sAdminPass =  $this->getConfig('AdminPassword', '');
@@ -150,6 +154,34 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 	}
 
+	public function GetRocketChatSettings($TenantId = null)
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
+
+		return $this->oRocketChatSettingsManager->get($this->client, $this->getAdminHeaders($TenantId));
+	}
+
+	public function ApplyRocketChatConfigs($TenantId = null)
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
+
+		return $this->oRocketChatSettingsManager->setConfigs($this->client, $this->getAdminHeaders($TenantId));
+	}
+
+	public function ApplyRocketChatTexts($TenantId = null)
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
+
+		return $this->oRocketChatSettingsManager->setTexts($this->client, $this->getAdminHeaders($TenantId));
+	}
+
+	public function ApplyRocketChatCss($TenantId = null)
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
+
+		return $this->oRocketChatSettingsManager->setCss($this->client, $this->getAdminHeaders($TenantId));
+	}
+
 	public function EntryChatDirect()
 	{
 		try {
@@ -168,10 +200,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 	}
 
-	public function EntryChat()
-	{
-		$this->showChat();
-	}
+//	public function EntryChat()
+//	{
+//		$this->showChat();
+//	}
 
 	protected function showChat($sUrl = '')
 	{
@@ -204,8 +236,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
-	protected function getAdminAccount()
+	protected function getAdminAccount($TenantId = null)
 	{
+		 // TODO: $TenantId
 		if (!isset($this->adminAccount)) {
 			try {
 				$res = $this->client->post('api/v1/login', [
@@ -223,6 +256,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 
 		return $this->adminAccount;
+	}
+
+	protected function getAdminHeaders($TenantId = null)
+	{
+		$oAdmin = $this->getAdminAccount($TenantId); // TODO: $TenantId
+		if ($oAdmin)
+		{
+			return [
+				'X-Auth-Token' => $oAdmin->data->authToken, 
+				'X-User-Id' => $oAdmin->data->userId,
+				'X-2fa-code' => hash('sha256', $this->sAdminPass), // TODO: $TenantId
+				'X-2fa-method' => 'password'
+			];
+		}
+		return [];
 	}
 
 	protected function getUserInfo($sEmail)
@@ -399,21 +447,15 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = Api::getAuthenticatedUser();
 		if ($oUser) {
 			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
-			$oAdmin = $this->getAdminAccount();
-			if ($oAccount && $oAdmin) {
+			if ($oAccount) {
 				$res = $this->client->post('api/v1/users.update', [
 					'form_params' => [
 						'userId' => $userInfo->user->_id, 
 						'data' => [
-							"password" => $oAccount->getPassword()
+							'password' => $oAccount->getPassword()
 						]
 					],
-					'headers' => [
-						"X-Auth-Token" => $oAdmin->data->authToken, 
-						"X-User-Id" => $oAdmin->data->userId,
-						"X-2fa-code" => hash("sha256", $this->sAdminPass),
-						"X-2fa-method" => "password"
-					],
+					'headers' => $this->getAdminHeaders(),
 					'http_errors' => false
 				]);
 				$mResult = ($res->getStatusCode() === 200);
