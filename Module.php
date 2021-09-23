@@ -276,26 +276,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected function getUserInfo($sEmail)
 	{
 		$mResult = false;
-
-		$oAdmin = $this->getAdminAccount();
-		if ($oAdmin) {
-			try
-			{
-				$res = $this->client->get('api/v1/users.info', [
-					'query' => [
-						'username' => $this->getUserNameFromEmail($sEmail)
-					],
-					'headers' => [
-						"X-Auth-Token" => $oAdmin->data->authToken, 
-						"X-User-Id" => $oAdmin->data->userId,
-					],
-					'http_errors' => false
-				]);
-				if ($res->getStatusCode() === 200) {
-					$mResult = \json_decode($res->getBody());
-				}
+		$sUserName = $this->getUserNameFromEmail($sEmail);
+		try {
+			$res = $this->client->get('api/v1/users.info', [
+				'query' => [
+					'username' => $this->getUserNameFromEmail($sEmail)
+				],
+				'headers' => $this->getAdminHeaders(),
+				'http_errors' => false
+			]);
+			if ($res->getStatusCode() === 200) {
+				$mResult = \json_decode($res->getBody());
 			}
-			catch (ConnectException $oException) {}
+		} catch (ConnectException $oException) {
+			\Aurora\System\Api::Log('Cannot get ' . $sUserName . ' user info. Exception is below.');
+			\Aurora\System\Api::Log($oException);
 		}
 
 		return $mResult;
@@ -317,33 +312,29 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$mResult = false;
 
-		$oAdmin = $this->getAdminAccount();
-		if ($oAdmin) {
-			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($sEmail);
-			if ($oAccount) {
-				$sEmail = $oAccount->getLogin();
-				$sPassword = $oAccount->getPassword();
-				$sLogin = $this->getUserNameFromEmail($sEmail);
-				$sName = $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
-				try {
-					$res = $this->client->post('api/v1/users.create', [
-						'form_params' => [
-							'email' => $sEmail, 
-							'name' => $sName, 
-							'password' => $sPassword, 
-							'username' => $sLogin
-						],
-						'headers' => [
-							"X-Auth-Token" => $oAdmin->data->authToken, 
-							"X-User-Id" => $oAdmin->data->userId,
-						],
-						'http_errors' => false
-					]);
-					if ($res->getStatusCode() === 200) {
-						$mResult = \json_decode($res->getBody());
-					}
+		$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($sEmail);
+		if ($oAccount) {
+			$sEmail = $oAccount->getLogin();
+			$sPassword = $oAccount->getPassword();
+			$sLogin = $this->getUserNameFromEmail($sEmail);
+			$sName = $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
+			try {
+				$res = $this->client->post('api/v1/users.create', [
+					'form_params' => [
+						'email' => $sEmail, 
+						'name' => $sName, 
+						'password' => $sPassword, 
+						'username' => $sLogin
+					],
+					'headers' => $this->getAdminHeaders(),
+					'http_errors' => false
+				]);
+				if ($res->getStatusCode() === 200) {
+					$mResult = \json_decode($res->getBody());
 				}
-				catch (ConnectException $oException) {}
+			} catch (ConnectException $oException) {
+				\Aurora\System\Api::Log('Cannot create ' . $sEmail . ' user. Exception is below.');
+				\Aurora\System\Api::Log($oException);
 			}
 		}
 		return $mResult;
@@ -609,30 +600,31 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function onBeforeDeleteUser(&$aArgs, &$mResult)
 	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
-
 		$oAuthenticatedUser = Api::getAuthenticatedUser();
-		if ($oAuthenticatedUser && ($oAuthenticatedUser->Role === UserRole::SuperAdmin || 
-			($oAuthenticatedUser->Role === UserRole::NormalUser && $oAuthenticatedUser->Id === (int) $aArgs['UserId']))) {
-			$oAdmin = $this->getAdminAccount();
-			if ($oAdmin) {
-				try {
-					$res = $this->client->post('api/v1/users.delete', [
-						'form_params' => [
-							'username' => $this->getUserNameFromEmail(Api::getUserPublicIdById($aArgs['UserId']))
-						],
-						'headers' => [
-							"X-Auth-Token" => $oAdmin->data->authToken, 
-							"X-User-Id" => $oAdmin->data->userId,
-						],
-						'http_errors' => false
-					]);
-					if ($res->getStatusCode() === 200) {
-						$mResult = true;
-					}
-				}
-				catch (ConnectException $oException) {}
+		if ($oAuthenticatedUser && $oAuthenticatedUser->isNormalOrTenant() &&
+				$oAuthenticatedUser->Id === (int) $aArgs['UserId']
+		) {
+			// Access is granted
+		} else {
+			\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
+		}
+
+		$sUserName = $this->getUserNameFromEmail(Api::getUserPublicIdById($aArgs['UserId']));
+		try {
+			$oRes = $this->client->post('api/v1/users.delete', [
+				'form_params' => [
+					'username' => $sUserName
+				],
+				'headers' => $this->getAdminHeaders(),
+				'http_errors' => false
+			]);
+			if ($oRes->getStatusCode() === 200) {
+				$mResult = true;
 			}
+		}
+		catch (ConnectException $oException) {
+			\Aurora\System\Api::Log('Cannot delete ' . $sUserName . ' user from RocketChat. Exception is below.');
+			\Aurora\System\Api::Log($oException);
 		}
 	}
 }
