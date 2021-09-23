@@ -47,6 +47,9 @@ body, .rc-old.full-page {
   background-position: 0 -60px !important;
   background-size: auto 100vw !important;
 }
+.rcx-sidebar-title {
+  color: white !important;
+}
 
 .rc-scrollbars-track-v {
   width: 9px !important;
@@ -102,6 +105,7 @@ body, .rc-old.full-page {
 }
 
 .rcx-sidebar .rcx-button--ghost {
+  color: white;
   background-color: #43d0bf !important;
   border: solid 1px #2db3a3 !important;
   border-radius: 5px !important
