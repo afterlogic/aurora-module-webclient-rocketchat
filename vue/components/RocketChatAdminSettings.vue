@@ -19,69 +19,10 @@
                 <q-input outlined dense bg-color="white" v-model="adminUsername"/>
               </div>
             </div>
-            <div class="row q-mb-md">
+            <div class="row">
               <div class="col-2 q-mt-sm" v-t="'ROCKETCHATWEBCLIENT.ADMIN_PASSWORD_LABEL'"></div>
               <div class="col-5">
                 <q-input outlined dense bg-color="white" type="password" autocomplete="new-password" v-model="adminPassword"/>
-              </div>
-            </div>
-            <div class="row q-mb-sm">
-              <div class="col-2 q-my-sm"></div>
-              <div class="col-10">
-                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_CONFIGS_NEEDED_VALUES'" />
-                <ul>
-                  <li><q-item-label caption>Accounts->Registration->Password Reset: disabled</q-item-label></li>
-                  <li><q-item-label caption>General->Restrict access inside any Iframe: disabled</q-item-label></li>
-                  <li><q-item-label caption>General->Iframe Integration->Enable Send: enabled</q-item-label></li>
-                  <li><q-item-label caption>General->Iframe Integration->Enable Receive: enabled</q-item-label></li>
-                  <li><q-item-label caption>Rate Limiter->API Rate Limiter->Enable Rate Limiter: disabled</q-item-label></li>
-                </ul>
-              </div>
-            </div>
-            <div class="row q-mb-sm" v-if="!configsRequestIsInProgress">
-              <div class="col-2 q-my-sm"></div>
-              <div class="col-10">
-                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_CONFIGS_CORRECT'" v-if="configsAreCorrect" />
-                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_APPLY_CONFIGS'" v-if="!configsAreCorrect" />
-              </div>
-            </div>
-            <div class="row q-mb-md">
-              <div class="col-2 q-my-sm"></div>
-              <div class="col-5">
-                <q-btn unelevated no-caps dense class="q-px-sm" :ripple="false" color="primary"
-                       :loading="applyConfigsInProgress" :label="$t('ROCKETCHATWEBCLIENT.ACTION_APPLY_CONFIGS')"
-                       @click="applyConfigs" :disable="configsRequestIsInProgress || configsAreCorrect">
-                </q-btn>
-              </div>
-            </div>
-            <div class="row q-mb-sm">
-              <div class="col-2 q-my-sm"></div>
-              <div class="col-10">
-                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_APPLY_TEXTS'"/>
-              </div>
-            </div>
-            <div class="row q-mb-md">
-              <div class="col-2 q-my-sm"></div>
-              <div class="col-5">
-                <q-btn unelevated no-caps dense class="q-px-sm" :ripple="false" color="primary"
-                       :loading="applyTextsInProgress" :label="$t('ROCKETCHATWEBCLIENT.ACTION_APPLY_TEXTS')"
-                       @click="applyTexts">
-                </q-btn>
-              </div>
-            </div>
-            <div class="row q-mb-sm">
-              <div class="col-2 q-my-sm"></div>
-              <div class="col-10">
-                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_APPLY_CSS'"/>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-2 q-my-sm"></div>
-              <div class="col-5">
-                <q-btn unelevated no-caps dense class="q-px-sm" :ripple="false" color="primary"
-                       :loading="applyCssInProgress" :label="$t('ROCKETCHATWEBCLIENT.ACTION_APPLY_CSS')"
-                       @click="applyCss">
-                </q-btn>
               </div>
             </div>
           </q-card-section>
@@ -91,6 +32,76 @@
                  :label="$t('COREWEBCLIENT.ACTION_SAVE')"
                  @click="save"/>
         </div>
+      </div>
+      <div class="q-pa-lg ">
+        <div class="row q-mb-md">
+          <div class="col text-h5" v-t="'ROCKETCHATWEBCLIENT.HEADING_SYSTEM_SETTINGS_TAB'"></div>
+        </div>
+        <q-card flat bordered class="card-edit-settings">
+          <q-card-section>
+            <div class="row q-mb-sm">
+              <div class="col-10">
+                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_CONFIGS_NEEDED_VALUES'" />
+                <ul>
+                  <li><q-item-label caption>Accounts->Registration->Password Reset: <span v-t="'ROCKETCHATWEBCLIENT.LABEL_STATE_DISABLED'"></span></q-item-label></li>
+                  <li><q-item-label caption>General->Restrict access inside any Iframe: <span v-t="'ROCKETCHATWEBCLIENT.LABEL_STATE_DISABLED'"></span></q-item-label></li>
+                  <li><q-item-label caption>General->Iframe Integration->Enable Send: <span v-t="'ROCKETCHATWEBCLIENT.LABEL_STATE_ENABLED'"></span></q-item-label></li>
+                  <li><q-item-label caption>General->Iframe Integration->Enable Receive: <span v-t="'ROCKETCHATWEBCLIENT.LABEL_STATE_ENABLED'"></span></q-item-label></li>
+                  <li><q-item-label caption>Rate Limiter->API Rate Limiter->Enable Rate Limiter: <span v-t="'ROCKETCHATWEBCLIENT.LABEL_STATE_DISABLED'"></span></q-item-label></li>
+                </ul>
+              </div>
+            </div>
+            <div class="row q-mb-sm" v-if="!configsRequestIsInProgress">
+              <div class="col-10">
+                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_CONFIGS_CORRECT'" v-if="configsAreCorrect" />
+                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_CONFIGS_INCORRECT'" class="text-red" v-if="!configsAreCorrect" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-5">
+                <q-btn unelevated no-caps dense class="q-px-sm" :ripple="false" color="primary"
+                       :loading="applyRequiredChangesInProgress" :label="$t('ROCKETCHATWEBCLIENT.ACTION_APPLY_CONFIGS')"
+                       @click="applyRequiredChanges" :disable="configsRequestIsInProgress || configsAreCorrect">
+                </q-btn>
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+      </div>
+      <div class="q-pa-lg ">
+        <div class="row q-mb-md">
+          <div class="col text-h5" v-t="'ROCKETCHATWEBCLIENT.HEADING_APPEARANCE_SETTINGS_TAB'"></div>
+        </div>
+        <q-card flat bordered class="card-edit-settings">
+          <q-card-section>
+            <div class="row q-mb-sm">
+              <div class="col-10">
+                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_APPLY_TEXTS'"/>
+              </div>
+            </div>
+            <div class="row q-mb-md">
+              <div class="col-5">
+                <q-btn unelevated no-caps dense class="q-px-sm" :ripple="false" color="primary"
+                       :loading="applyTextChangesInProgress" :label="$t('ROCKETCHATWEBCLIENT.ACTION_APPLY_TEXTS')"
+                       @click="applyTextChanges">
+                </q-btn>
+              </div>
+            </div>
+            <div class="row q-mb-sm">
+              <div class="col-10">
+                <q-item-label caption v-t="'ROCKETCHATWEBCLIENT.HINT_APPLY_CSS'"/>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-5">
+                <q-btn unelevated no-caps dense class="q-px-sm" :ripple="false" color="primary"
+                       :loading="applyCssChangesInProgress" :label="$t('ROCKETCHATWEBCLIENT.ACTION_APPLY_CSS')"
+                       @click="applyCssChanges">
+                </q-btn>
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
       </div>
     </q-scroll-area>
     <q-dialog v-model="showSaveBeforeApplyWarning">
@@ -119,7 +130,7 @@ import settings from '../../../RocketChatWebclient/vue/settings'
 const FAKE_PASS = '      '
 
 export default {
-  name: 'RocketChatWebclientAdminSettings',
+  name: 'RocketChatAdminSettings',
 
   data () {
     return {
@@ -132,9 +143,9 @@ export default {
       configsRequestIsInProgress: true,
       configsAreCorrect: false,
       showSaveBeforeApplyWarning: false,
-      applyConfigsInProgress: false,
-      applyTextsInProgress: false,
-      applyCssInProgress: false,
+      applyRequiredChangesInProgress: false,
+      applyTextChangesInProgress: false,
+      applyCssChangesInProgress: false,
     }
   },
 
@@ -234,8 +245,8 @@ export default {
       })
     },
 
-    applyConfigs () {
-      if (this.applyConfigsInProgress) {
+    applyRequiredChanges () {
+      if (this.applyRequiredChangesInProgress) {
         return
       }
       if (this.hasChanges()) {
@@ -243,12 +254,12 @@ export default {
         return
       }
 
-      this.applyConfigsInProgress = true
+      this.applyRequiredChangesInProgress = true
       webApi.sendRequest({
         moduleName: 'RocketChatWebclient',
         methodName: 'ApplyRocketChatConfigs',
       }).then(result => {
-        this.applyConfigsInProgress = false
+        this.applyRequiredChangesInProgress = false
         if (result === true) {
           this.configsAreCorrect = true
           notification.showReport(this.$t('ROCKETCHATWEBCLIENT.REPORT_APPLY_CONFIGS_SUCCESS'))
@@ -256,13 +267,13 @@ export default {
           notification.showError(this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_CONFIGS'))
         }
       }, response => {
-        this.applyConfigsInProgress = false
+        this.applyRequiredChangesInProgress = false
         notification.showError(errors.getTextFromResponse(response, this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_CONFIGS')))
       })
     },
 
-    applyTexts () {
-      if (this.applyConfigsInProgress) {
+    applyTextChanges () {
+      if (this.applyTextChangesInProgress) {
         return
       }
       if (this.hasChanges()) {
@@ -270,25 +281,25 @@ export default {
         return
       }
 
-      this.applyTextsInProgress = true
+      this.applyTextChangesInProgress = true
       webApi.sendRequest({
         moduleName: 'RocketChatWebclient',
-        methodName: 'ApplyRocketChatTexts',
+        methodName: 'ApplyRocketChatTextChanges',
       }).then(result => {
-        this.applyTextsInProgress = false
+        this.applyTextChangesInProgress = false
         if (result === true) {
-          notification.showReport(this.$t('ROCKETCHATWEBCLIENT.REPORT_APPLY_TEXTS_SUCCESS'))
+          notification.showReport(this.$t('ROCKETCHATWEBCLIENT.REPORT_APPLY_CONFIGS_SUCCESS'))
         } else {
-          notification.showError(this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_TEXTS'))
+          notification.showError(this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_CONFIGS'))
         }
       }, response => {
-        this.applyTextsInProgress = false
-        notification.showError(errors.getTextFromResponse(response, this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_TEXTS')))
+        this.applyTextChangesInProgress = false
+        notification.showError(errors.getTextFromResponse(response, this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_CONFIGS')))
       })
     },
 
-    applyCss () {
-      if (this.applyConfigsInProgress) {
+    applyCssChanges () {
+      if (this.applyCssChangesInProgress) {
         return
       }
       if (this.hasChanges()) {
@@ -296,20 +307,20 @@ export default {
         return
       }
 
-      this.applyCssInProgress = true
+      this.applyCssChangesInProgress = true
       webApi.sendRequest({
         moduleName: 'RocketChatWebclient',
-        methodName: 'ApplyRocketChatCss',
+        methodName: 'ApplyRocketChatCssChanges',
       }).then(result => {
-        this.applyCssInProgress = false
+        this.applyCssChangesInProgress = false
         if (result === true) {
-          notification.showReport(this.$t('ROCKETCHATWEBCLIENT.REPORT_APPLY_CSS_SUCCESS'))
+          notification.showReport(this.$t('ROCKETCHATWEBCLIENT.REPORT_APPLY_CONFIGS_SUCCESS'))
         } else {
-          notification.showError(this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_CSS'))
+          notification.showError(this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_CONFIGS'))
         }
       }, response => {
-        this.applyCssInProgress = false
-        notification.showError(errors.getTextFromResponse(response, this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_CSS')))
+        this.applyCssChangesInProgress = false
+        notification.showError(errors.getTextFromResponse(response, this.$t('ROCKETCHATWEBCLIENT.ERROR_APPLY_CONFIGS')))
       })
     },
   }
@@ -317,5 +328,7 @@ export default {
 </script>
 
 <style scoped>
-
+li::marker {
+  content: '-  ';
+}
 </style>

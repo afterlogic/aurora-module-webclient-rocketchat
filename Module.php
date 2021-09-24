@@ -161,21 +161,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $this->oRocketChatSettingsManager->get($this->client, $this->getAdminHeaders($TenantId));
 	}
 
-	public function ApplyRocketChatConfigs($TenantId = null)
+	public function ApplyRocketChatRequiredChanges($TenantId = null)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
 		return $this->oRocketChatSettingsManager->setConfigs($this->client, $this->getAdminHeaders($TenantId));
 	}
 
-	public function ApplyRocketChatTexts($TenantId = null)
+	public function ApplyRocketChatTextChanges($TenantId = null)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
 		return $this->oRocketChatSettingsManager->setTexts($this->client, $this->getAdminHeaders($TenantId));
 	}
 
-	public function ApplyRocketChatCss($TenantId = null)
+	public function ApplyRocketChatCssChanges($TenantId = null)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
