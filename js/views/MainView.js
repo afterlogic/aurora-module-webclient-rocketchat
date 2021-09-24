@@ -45,7 +45,7 @@ CMainView.prototype.onLoad = function () {
 					oNotification = oEvent.data.data.notification,
 					oParameters = {
 						action: 'show',
-						icon: this.sChatUrl + 'avatar/' + oNotification.payload.sender.username,
+						icon: this.sChatUrl + 'avatar/' + oNotification.payload.sender.username + '?size=50&format=png',
 						title: oNotification.title,
 						body: oNotification.text,
 						callback: function () {
