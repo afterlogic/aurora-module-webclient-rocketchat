@@ -3,10 +3,13 @@
 var
 	_ = require('underscore'),
 	ko = require('knockout'),
-	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
+
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
-	WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),	
+
+	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	CAbstractHeaderItemView = require('%PathToCoreWebclientModule%/js/views/CHeaderItemView.js'),
+	WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),
+
 	Settings = require('modules/%ModuleName%/js/Settings.js')
 ;
 
@@ -25,22 +28,9 @@ function CHeaderItemView()
 }
 
 CHeaderItemView.prototype.getUnreadCounter = function () {
-	Ajax.send('GetUnreadCounter', {}, function(oResponse) {
+	Ajax.send('GetUnreadCounter', {}, function (oResponse) {
 		this.unseenCount(oResponse.Result);
-		this.setAutocheckTimer();
 	}, this);
-};
-
-CHeaderItemView.prototype.setAutocheckTimer = function ()
-{
-	clearTimeout(this.iAutoCheckMailTimer);
-
-	if (true/*UserSettings.AutoRefreshIntervalMinutes > 0*/)
-	{
-		this.iAutoCheckMailTimer = setTimeout(_.bind(function () {
-			this.getUnreadCounter();
-		}, this), Settings.UnreadCounterIntervalInSeconds * 1000);
-	}
 };
 
 CHeaderItemView.prototype.onChatClick = function (data, event)

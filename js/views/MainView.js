@@ -41,44 +41,51 @@ CMainView.prototype.onLoad = function () {
 
 		window.addEventListener('message', function(oEvent) {
 			if (oEvent && oEvent.data && oEvent.data.eventName === 'notification') {
-				var
-					oNotification = oEvent.data.data.notification,
-					oParameters = {
-						action: 'show',
-						icon: this.sChatUrl + 'avatar/' + oNotification.payload.sender.username + '?size=50&format=png',
-						title: oNotification.title,
-						body: oNotification.text,
-						callback: function () {
-							window.focus();
-							if (!this.shown()) {
-								Routing.setHash([Settings.HashModuleName]);
-							}
-							var sPath = '';
-							switch (oNotification.payload.type) {
-								case 'c':
-									sPath = '/channel/' + oNotification.payload.name;
-									break;
-								case 'd':
-									sPath = '/direct/' + oNotification.payload.rid;
-									break;
-								case 'p':
-									sPath = '/group/' + oNotification.payload.name;
-									break;
-							}
-							if (sPath) {
-								this.iframeDom()[0].contentWindow.postMessage({
-									externalCommand: 'go',
-									path: sPath
-								}, '*');
-							}
-						}.bind(this)
-					}
-				;
-
-				Utils.desktopNotify(oParameters);
+				this.showNotification(oEvent.data.data.notification);
+			}
+			if (oEvent && oEvent.data && oEvent.data.eventName === 'unread-changed') {
+				var HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
+				HeaderItemView.unseenCount(oEvent.data.data);
 			}
 		}.bind(this));
 	}
+};
+
+CMainView.prototype.showNotification = function (oNotification) {
+	var
+		oParameters = {
+			action: 'show',
+			icon: this.sChatUrl + 'avatar/' + oNotification.payload.sender.username + '?size=50&format=png',
+			title: oNotification.title,
+			body: oNotification.text,
+			callback: function () {
+				window.focus();
+				if (!this.shown()) {
+					Routing.setHash([Settings.HashModuleName]);
+				}
+				var sPath = '';
+				switch (oNotification.payload.type) {
+					case 'c':
+						sPath = '/channel/' + oNotification.payload.name;
+						break;
+					case 'd':
+						sPath = '/direct/' + oNotification.payload.rid;
+						break;
+					case 'p':
+						sPath = '/group/' + oNotification.payload.name;
+						break;
+				}
+				if (sPath) {
+					this.iframeDom()[0].contentWindow.postMessage({
+						externalCommand: 'go',
+						path: sPath
+					}, '*');
+				}
+			}.bind(this)
+		}
+	;
+
+	Utils.desktopNotify(oParameters);
 };
 
 module.exports = new CMainView();

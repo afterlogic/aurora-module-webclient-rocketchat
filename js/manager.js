@@ -97,25 +97,6 @@ module.exports = function (oAppData) {
 					name: sAppHash
 				};
 			};
-			
-			// result.getHeaderItem = function ()
-			// {
-			// 	var 
-			// 		CHeaderItemView = require('%PathToCoreWebclientModule%/js/views/CHeaderItemView.js'),
-			// 		oHeaderEntry = 	{};
-			// 	;
-
-			// 	if (HeaderItemView === null)
-			// 	{
-			// 		HeaderItemView = new CHeaderItemView(Settings.AppName || TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB'));
-			// 	}
-			// 	oHeaderEntry = {
-			// 		item: HeaderItemView,
-			// 		name: sAppHash
-			// 	};
-				
-			// 	return oHeaderEntry;
-			// }
 		}
 
 		return result;
