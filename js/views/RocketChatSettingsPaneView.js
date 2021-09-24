@@ -20,7 +20,7 @@ function CRocketChatSettingsPaneView()
 {
 	this.sAppName = Settings.AppName || TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB');
 
-	this.server = Settings.СhatUrl;
+	this.server = Settings.ChatUrl;
 	
 	this.bDemo = UserSettings.IsDemo;
 

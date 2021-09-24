@@ -65,16 +65,6 @@ export default {
     tenantId () {
       return this.$store.getters['tenants/getCurrentTenantId']
     },
-
-    allTenants () {
-      return this.$store.getters['tenants/getTenants']
-    }
-  },
-
-  watch: {
-    allTenants () {
-      this.populate()
-    },
   },
 
   mounted () {

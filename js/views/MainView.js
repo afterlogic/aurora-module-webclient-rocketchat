@@ -21,7 +21,7 @@ function CMainView()
 {
 	CAbstractScreenView.call(this, '%ModuleName%');
 	
-	this.sСhatUrl = Settings.СhatUrl;
+	this.sChatUrl = Settings.ChatUrl;
 
 	this.iframeDom = ko.observable(null);
 	this.avaDom = ko.observable(null);
@@ -45,7 +45,7 @@ CMainView.prototype.onLoad = function () {
 					oNotification = oEvent.data.data.notification,
 					oParameters = {
 						action: 'show',
-						icon: this.sСhatUrl + 'avatar/' + oNotification.payload.sender.username,
+						icon: this.sChatUrl + 'avatar/' + oNotification.payload.sender.username,
 						title: oNotification.title,
 						body: oNotification.text,
 						callback: function () {
