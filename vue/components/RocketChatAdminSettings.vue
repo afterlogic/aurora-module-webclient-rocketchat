@@ -1,7 +1,7 @@
 <template>
   <div class="full-height full-width">
     <q-scroll-area class="full-height full-width">
-      <div class="q-pa-lg ">
+      <div class="q-pa-lg">
         <div class="row q-mb-md">
           <div class="col text-h5" v-t="'ROCKETCHATWEBCLIENT.HEADING_SETTINGS_TAB'"></div>
         </div>
@@ -33,7 +33,7 @@
                  @click="save"/>
         </div>
       </div>
-      <div class="q-pa-lg ">
+      <div class="q-px-lg q-pb-lg q-pt-none">
         <div class="row q-mb-md">
           <div class="col text-h5" v-t="'ROCKETCHATWEBCLIENT.HEADING_SYSTEM_SETTINGS_TAB'"></div>
         </div>
@@ -68,7 +68,7 @@
           </q-card-section>
         </q-card>
       </div>
-      <div class="q-pa-lg ">
+      <div class="q-pa-lg">
         <div class="row q-mb-md">
           <div class="col text-h5" v-t="'ROCKETCHATWEBCLIENT.HEADING_APPEARANCE_SETTINGS_TAB'"></div>
         </div>
@@ -106,11 +106,9 @@
     </q-scroll-area>
     <q-dialog v-model="showSaveBeforeApplyWarning">
       <q-card>
-        <q-card-section >
-          {{$t('ROCKETCHATWEBCLIENT.WARNING_SAVE_BEFORE_APPLY')}}
-        </q-card-section>
+        <q-card-section v-t="'ROCKETCHATWEBCLIENT.WARNING_SAVE_BEFORE_APPLY'"></q-card-section>
         <q-card-actions align="right">
-          <q-btn flat  :label="$t('COREWEBCLIENT.ACTION_OK')" color="primary" v-close-popup />
+          <q-btn flat :label="$t('COREWEBCLIENT.ACTION_OK')" color="primary" v-close-popup />
         </q-card-actions>
       </q-card>
     </q-dialog>
