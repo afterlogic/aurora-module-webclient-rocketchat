@@ -124,7 +124,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 * @param boolean $EnableModule indicates if user turned on Chat Module.
 	 * @return boolean
 	 */
-	public function UpdateSettings($ChatUrl, $AdminUsername, $AdminPassword = null)
+	public function UpdateSettings($TenantId, $ChatUrl, $AdminUsername, $AdminPassword = null)
 	{
 		$oSettings = $this->GetModuleSettings();
 		if (!empty($TenantId)) {
