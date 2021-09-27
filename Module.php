@@ -14,6 +14,7 @@ use Aurora\System\Exceptions\ApiException;
 use Aurora\System\Utils;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
+use Illuminate\Support\Str;
 
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
@@ -31,6 +32,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected $sAdminUser = "";
 	
 	protected $sAdminPass = "";
+
+	protected $bIsDemo = false;
 	
 	/**
 	 * @var \GuzzleHttp\Client
@@ -39,18 +42,27 @@ class Module extends \Aurora\System\Module\AbstractModule
 	
 	protected $adminAccount = null;
 
-	public function init() 
+	protected function initConfig()
 	{
-		$this->oRocketChatSettingsManager = new Managers\RocketChatSettings\Manager($this);
-
-		$this->sChatUrl =  $this->getConfig('ChatUrl', '');
-		$this->sAdminUser =  $this->getConfig('AdminUsername', '');
-		$this->sAdminPass =  $this->getConfig('AdminPassword', '');
+		$oSettings = $this->GetModuleSettings();
+		$this->sChatUrl = $oSettings->GetValue('ChatUrl', '');		
+		$this->sAdminUser = $oSettings->GetValue('AdminUsername', '');
+		$this->sAdminPass = $oSettings->GetValue('AdminPassword', '');
 
 		$this->client = new Client([
 			'base_uri' => $this->sChatUrl,
 			'verify' => false
 		]);
+
+		$oDemoModePlugin = Api::GetModule('DemoModePlugin');
+		$this->bIsDemo = !($oDemoModePlugin && $oDemoModePlugin->IsDemoUser());
+	}
+
+	public function init() 
+	{
+		$this->oRocketChatSettingsManager = new Managers\RocketChatSettings\Manager($this);
+
+		$this->initConfig();
 
 		$this->AddEntry('chat', 'EntryChat');
 		$this->AddEntry('chat-direct', 'EntryChatDirect');
@@ -99,13 +111,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 			if ($oUser->isNormalOrTenant())
 			{
 				$aChatAuthData = $this->initChat();
-				return [
+				$mResult = [
 					'ChatUrl' => $sChatUrl,
 					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : '',
 					'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
 				];
+				if ($this->bIsDemo) {
+					$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
+					if ($oAccount) {
+						$mResult['DemoPassword'] = $oAccount->getExtendedProp($this->GetName() . '::' . 'Password');
+					}
+				}
+
+				return $mResult;
 			}
-			else if ($oUser->Role === \Aurora\System\Enums\UserRole::SuperAdmin)
+			else if ($oUser->Role === UserRole::SuperAdmin)
 			{
 				return [
 					'ChatUrl' => $sChatUrl,
@@ -239,7 +259,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected function getAdminAccount($TenantId = null)
 	{
 		 // TODO: $TenantId
-		if (!isset($this->adminAccount)) {
+		if (!isset($this->adminAccount) && $this->client) {
 			try {
 				$res = $this->client->post('api/v1/login', [
 					'form_params' => [
@@ -278,15 +298,17 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$mResult = false;
 		$sUserName = $this->getUserNameFromEmail($sEmail);
 		try {
-			$res = $this->client->get('api/v1/users.info', [
-				'query' => [
-					'username' => $this->getUserNameFromEmail($sEmail)
-				],
-				'headers' => $this->getAdminHeaders(),
-				'http_errors' => false
-			]);
-			if ($res->getStatusCode() === 200) {
-				$mResult = \json_decode($res->getBody());
+			if ($this->client) {
+				$res = $this->client->get('api/v1/users.info', [
+					'query' => [
+						'username' => $this->getUserNameFromEmail($sEmail)
+					],
+					'headers' => $this->getAdminHeaders(),
+					'http_errors' => false
+				]);
+				if ($res->getStatusCode() === 200) {
+					$mResult = \json_decode($res->getBody());
+				}
 			}
 		} catch (ConnectException $oException) {
 			\Aurora\System\Api::Log('Cannot get ' . $sUserName . ' user info. Exception is below.');
@@ -313,9 +335,17 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$mResult = false;
 
 		$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($sEmail);
-		if ($oAccount) {
+		if ($oAccount && $this->client) {
 			$sEmail = $oAccount->getLogin();
-			$sPassword = $oAccount->getPassword();
+			if (!$this->bIsDemo) {
+				$sPassword = $oAccount->getPassword();
+			} else {
+				$sPassword = Str::random(10);
+				$oAccount->setExtendedProp(
+					$this->GetName() . '::' . 'Password', $sPassword
+				);
+			}
+			
 			$sLogin = $this->getUserNameFromEmail($sEmail);
 			$sName = $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
 			try {
@@ -360,12 +390,17 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = Api::getAuthenticatedUser();
 		if ($oUser) {
 			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
-			if ($oAccount) {
+			if ($oAccount && $this->client) {
+				if (!$this->bIsDemo) {
+					$sPassword = $oAccount->getPassword();
+				} else {
+					$sPassword = $oAccount->getExtendedProp($this->GetName() . '::' . 'Password', '');
+				}
 				try {
 					$res = $this->client->post('api/v1/login', [
 						'form_params' => [
 							'user' => $this->getUserNameFromEmail($oAccount->getLogin()), 
-							'password' => $oAccount->getPassword()
+							'password' => $sPassword
 						],
 						'http_errors' => false
 					]);
@@ -395,7 +430,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = Api::getAuthenticatedUser();
 		if ($oUser) {
 			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
-			if ($oAccount) {
+			if ($oAccount && $this->client) {
 				try {
 					$res = $this->client->post('api/v1/logout', [
 						'form_params' => [
@@ -417,19 +452,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	protected function updateLanguage($sUserId, $sToken, $sLang)
 	{
-		$this->client->post('api/v1/users.setPreferences', [
-			'form_params' => [
-				'userId' => $sUserId, 
-				'data' => [
-					"language" => $sLang
-				]
-			],
-			'headers' => [
-				"X-Auth-Token" => $sToken, 
-				"X-User-Id" => $sUserId
-			],
-			'http_errors' => false
-		]);
+		if ($this->client) {
+			$this->client->post('api/v1/users.setPreferences', [
+				'form_params' => [
+					'userId' => $sUserId, 
+					'data' => [
+						"language" => $sLang
+					]
+				],
+				'headers' => [
+					"X-Auth-Token" => $sToken, 
+					"X-User-Id" => $sUserId
+				],
+				'http_errors' => false
+			]);
+		}
 	}
 
 	protected function updateUserPassword($userInfo)
@@ -438,7 +475,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oUser = Api::getAuthenticatedUser();
 		if ($oUser) {
 			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
-			if ($oAccount) {
+			if ($oAccount && $this->client) {
 				$res = $this->client->post('api/v1/users.update', [
 					'form_params' => [
 						'userId' => $userInfo->user->_id, 
@@ -460,9 +497,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$mResult = false;
 		$oUser = Api::getAuthenticatedUser();
-		if ($oUser) {
-			$sAuthToken = $_COOKIE['RocketChatAuthToken'];
-			$sUserId = $_COOKIE['RocketChatUserId'];
+		if ($oUser && $this->client) {
+			$sAuthToken = isset($_COOKIE['RocketChatAuthToken']) ? $_COOKIE['RocketChatAuthToken'] : null;
+			$sUserId = isset($_COOKIE['RocketChatUserId']) ? $_COOKIE['RocketChatUserId'] : null;
 			if ($sAuthToken !== null && $sUserId !== null) {
 				$sAuthToken = Utils::DecryptValue($sAuthToken);
 				try
@@ -497,7 +534,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$currentUserInfo = $this->getCurrentUserInfo();
 				if ($currentUserInfo) {
 					$mResult = $this->loginCurrentUser();
-					if (!$mResult) {
+					if (!$mResult && !$this->bIsDemo) {
 						if ($this->updateUserPassword($currentUserInfo)) {
 							$mResult = $this->loginCurrentUser();
 						}
@@ -559,7 +596,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$mResult = 0;
 		$aCurUser = $this->initChat();
-		if ($aCurUser) {
+		if ($aCurUser && $this->client) {
 			try
 			{
 				$res = $this->client->get('api/v1/subscriptions.get', [
@@ -611,15 +648,17 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$sUserName = $this->getUserNameFromEmail(Api::getUserPublicIdById($aArgs['UserId']));
 		try {
-			$oRes = $this->client->post('api/v1/users.delete', [
-				'form_params' => [
-					'username' => $sUserName
-				],
-				'headers' => $this->getAdminHeaders(),
-				'http_errors' => false
-			]);
-			if ($oRes->getStatusCode() === 200) {
-				$mResult = true;
+			if ($this->client) {
+				$oRes = $this->client->post('api/v1/users.delete', [
+					'form_params' => [
+						'username' => $sUserName
+					],
+					'headers' => $this->getAdminHeaders(),
+					'http_errors' => false
+				]);
+				if ($oRes->getStatusCode() === 200) {
+					$mResult = true;
+				}
 			}
 		}
 		catch (ConnectException $oException) {
