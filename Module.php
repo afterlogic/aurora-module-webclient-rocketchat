@@ -52,7 +52,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			'verify' => false
 		]);
 
-//		$this->AddEntry('chat', 'EntryChat');
+		$this->AddEntry('chat', 'EntryChat');
 		$this->AddEntry('chat-direct', 'EntryChatDirect');
 
 		$this->subscribeEvent('Login::after', array($this, 'onAfterLogin'), 10);
@@ -200,10 +200,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 	}
 
-//	public function EntryChat()
-//	{
-//		$this->showChat();
-//	}
+	public function EntryChat()
+	{
+		$this->showChat();
+	}
 
 	protected function showChat($sUrl = '')
 	{
