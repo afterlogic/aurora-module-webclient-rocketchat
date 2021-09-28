@@ -255,7 +255,7 @@ export default {
       this.applyRequiredChangesInProgress = true
       webApi.sendRequest({
         moduleName: 'RocketChatWebclient',
-        methodName: 'ApplyRocketChatConfigs',
+        methodName: 'ApplyRocketChatRequiredChanges',
       }).then(result => {
         this.applyRequiredChangesInProgress = false
         if (result === true) {

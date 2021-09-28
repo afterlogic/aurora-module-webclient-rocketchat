@@ -87,6 +87,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 			}
 		} else {
 			$sChatUrl = $oSettings->GetValue('ChatUrl', '');
+			if (isset($this->client)) {
+				return $this->client;
+			}
 		}
 		if (!empty($sChatUrl)) {
 			$mResult = new Client([
@@ -109,7 +112,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$sChatUrl = '';
 		$sAdminUsername = '';
-		$iUnreadCounterIntervalInSeconds = 15;
 
 		$oSettings = $this->GetModuleSettings();
 		if (!empty($TenantId))
@@ -121,14 +123,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 			{
 				$sChatUrl = $oSettings->GetTenantValue($oTenant->Name, 'ChatUrl', $sChatUrl);		
 				$sAdminUsername = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', $sAdminUsername);
-				$iUnreadCounterIntervalInSeconds = $oSettings->GetTenantValue($oTenant->Name, 'UnreadCounterIntervalInSeconds', $iUnreadCounterIntervalInSeconds);
 			}
 		}
 		else
 		{
 			$sChatUrl = $oSettings->GetValue('ChatUrl', $sChatUrl);		
 			$sAdminUsername = $oSettings->GetValue('AdminUsername', $sAdminUsername);
-			$iUnreadCounterIntervalInSeconds = $oSettings->GetValue('UnreadCounterIntervalInSeconds', $iUnreadCounterIntervalInSeconds);		
 		}
 		
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
@@ -139,12 +139,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$aChatAuthData = $this->initChat();
 				$mResult = [
 					'ChatUrl' => $sChatUrl,
-					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : '',
-					'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
+					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : ''
 				];
-				// if ($this->isDemoUser($oUser->PublicId)) {
-				// 	$mResult['DemoPassword'] = $oUser->getExtendedProp($this->GetName() . '::' . 'Password');
-				// }
 
 				return $mResult;
 			}
@@ -152,8 +148,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			{
 				return [
 					'ChatUrl' => $sChatUrl,
-					'AdminUsername' => $sAdminUsername,
-					'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
+					'AdminUsername' => $sAdminUsername
 				];
 			}
 		}
@@ -291,60 +286,66 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
-	protected function getAdminAccount($TenantId = null)
+	protected function getAdminCredentials($TenantId = null)
 	{
 		$mResult = false;
 		if (isset($TenantId)) {
 			$oSettings = $this->GetModuleSettings();
 			$oTenant = Api::getTenantById($TenantId);
 			if ($oTenant) {
-				$sAdminUser = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', '');
-				$sAdminPass = $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword', '');
-				try {
-					$res = $this->client->post('api/v1/login', [
-						'form_params' => [
-							'user' => $sAdminUser, 
-							'password' => $sAdminPass
-						],
-						'http_errors' => false
-					]);
-					if ($res->getStatusCode() === 200) {
-						$mResult = \json_decode($res->getBody());
-					}		
-				}
-				catch (ConnectException $oException) {}
+				$mResult['AdminUser'] = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', '');
+				$mResult['AdminPass'] = $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword', '');
 			}
-		} else { 
-			if (!isset($this->adminAccount)) {
-				try {
-					$res = $this->client->post('api/v1/login', [
-						'form_params' => [
-							'user' => $this->sAdminUser, 
-							'password' => $this->sAdminPass
-						],
-						'http_errors' => false
-					]);
-					if ($res->getStatusCode() === 200) {
-						$this->adminAccount = \json_decode($res->getBody());
-					}		
-				}
-				catch (ConnectException $oException) {}
-			}
-			$mResult = $this->adminAccount;
+		} else {
+			$mResult['AdminUser'] = $this->sAdminUser;
+			$mResult['AdminPass'] = $this->sAdminPass;
 		}
+
+		return $mResult;
+	}
+
+	protected function getAdminAccount($TenantId = null)
+	{
+		$mResult = false;
+	
+		if (!isset($TenantId) && isset($this->adminAccount)) {
+			return $this->adminAccount;
+		}
+
+		$aAdminCreds = $this->getAdminCredentials($TenantId);
+		$client = $this->getClient($TenantId);
+		try {
+			if ($client && $aAdminCreds) {
+				$res = $client->post('api/v1/login', [
+					'form_params' => [
+						'user' => $aAdminCreds['AdminUser'], 
+						'password' => $aAdminCreds['AdminPass']
+					],
+					'http_errors' => false
+				]);
+				if ($res->getStatusCode() === 200) {
+					$mResult = \json_decode($res->getBody());
+					if (!isset($TenantId)) {
+						$this->adminAccount = $mResult;
+					}
+				}		
+			}
+		}
+		catch (ConnectException $oException) {}
 
 		return $mResult;
 	}
 
 	protected function getAdminHeaders($TenantId = null)
 	{
-		$oAdmin = $this->getAdminAccount($TenantId); // TODO: $TenantId
-		if ($oAdmin)
+		$oAdmin = $this->getAdminAccount($TenantId);
+		$aAdminCreds = $this->getAdminCredentials($TenantId);
+		if ($oAdmin && $aAdminCreds)
 		{
 			return [
 				'X-Auth-Token' => $oAdmin->data->authToken, 
 				'X-User-Id' => $oAdmin->data->userId,
-				'X-2fa-code' => hash('sha256', $this->sAdminPass), // TODO: $TenantId
+				'X-2fa-code' => hash('sha256', $aAdminCreds['AdminPass']),
 				'X-2fa-method' => 'password'
 			];
 		}

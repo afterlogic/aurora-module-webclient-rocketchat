@@ -310,7 +310,7 @@ export default {
       this.applyRequiredChangesInProgress = true
       webApi.sendRequest({
         moduleName: 'RocketChatWebclient',
-        methodName: 'ApplyRocketChatConfigs',
+        methodName: 'ApplyRocketChatRequiredChanges',
         parameters: {
           TenantId: this.tenantId
         },
