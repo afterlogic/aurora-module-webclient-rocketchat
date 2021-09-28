@@ -33,7 +33,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	
 	protected $sAdminPass = "";
 
-	protected $bIsDemo = false;
+	protected $sDemoPass = "demo";
 	
 	/**
 	 * @var \GuzzleHttp\Client
@@ -119,9 +119,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : '',
 					'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
 				];
-				if ($this->isDemoUser($oUser->PublicId)) {
-					$mResult['DemoPassword'] = $oUser->getExtendedProp($this->GetName() . '::' . 'Password');
-				}
+				// if ($this->isDemoUser($oUser->PublicId)) {
+				// 	$mResult['DemoPassword'] = $oUser->getExtendedProp($this->GetName() . '::' . 'Password');
+				// }
 
 				return $mResult;
 			}
@@ -340,14 +340,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			if (!$this->isDemoUser($sEmail)) {
 				$sPassword = $oAccount->getPassword();
 			} else {
-				$sPassword = 'demo';
-				$oUser = Api::getUserById($oAccount->UserId);
-				if ($oUser) {
-					$oUser->setExtendedProp(
-						$this->GetName() . '::' . 'Password', $sPassword
-					);
-					$oUser->save();
-				}
+				$sPassword = $this->sDemoPass;
 			}
 			
 			$sLogin = $this->getUserNameFromEmail($sEmail);
@@ -398,7 +391,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				if (!$this->isDemoUser($oUser->PublicId)) {
 					$sPassword = $oAccount->getPassword();
 				} else {
-					$sPassword = $oUser->getExtendedProp($this->GetName() . '::' . 'Password', '');
+					$sPassword = $this->sDemoPass;
 				}
 				try {
 					$res = $this->client->post('api/v1/login', [
