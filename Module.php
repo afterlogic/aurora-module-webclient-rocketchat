@@ -53,9 +53,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 			'base_uri' => $this->sChatUrl,
 			'verify' => false
 		]);
+	}
 
+	protected function isDemoUser($sEmail)
+	{
 		$oDemoModePlugin = Api::GetModule('DemoModePlugin');
-		$this->bIsDemo = !($oDemoModePlugin && $oDemoModePlugin->IsDemoUser());
+		return $oDemoModePlugin && $oDemoModePlugin->CheckDemoUser($sEmail);
 	}
 
 	public function init() 
@@ -116,11 +119,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : '',
 					'UnreadCounterIntervalInSeconds' => $iUnreadCounterIntervalInSeconds,
 				];
-				if ($this->bIsDemo) {
-					$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
-					if ($oAccount) {
-						$mResult['DemoPassword'] = $oAccount->getExtendedProp($this->GetName() . '::' . 'Password');
-					}
+				if ($this->isDemoUser($oUser->PublicId)) {
+					$mResult['DemoPassword'] = $oUser->getExtendedProp($this->GetName() . '::' . 'Password');
 				}
 
 				return $mResult;
@@ -337,13 +337,17 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($sEmail);
 		if ($oAccount && $this->client) {
 			$sEmail = $oAccount->getLogin();
-			if (!$this->bIsDemo) {
+			if (!$this->isDemoUser($sEmail)) {
 				$sPassword = $oAccount->getPassword();
 			} else {
-				$sPassword = Str::random(10);
-				$oAccount->setExtendedProp(
-					$this->GetName() . '::' . 'Password', $sPassword
-				);
+				$sPassword = 'demo';
+				$oUser = Api::getUserById($oAccount->UserId);
+				if ($oUser) {
+					$oUser->setExtendedProp(
+						$this->GetName() . '::' . 'Password', $sPassword
+					);
+					$oUser->save();
+				}
 			}
 			
 			$sLogin = $this->getUserNameFromEmail($sEmail);
@@ -391,10 +395,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if ($oUser) {
 			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
 			if ($oAccount && $this->client) {
-				if (!$this->bIsDemo) {
+				if (!$this->isDemoUser($oUser->PublicId)) {
 					$sPassword = $oAccount->getPassword();
 				} else {
-					$sPassword = $oAccount->getExtendedProp($this->GetName() . '::' . 'Password', '');
+					$sPassword = $oUser->getExtendedProp($this->GetName() . '::' . 'Password', '');
 				}
 				try {
 					$res = $this->client->post('api/v1/login', [
@@ -534,7 +538,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$currentUserInfo = $this->getCurrentUserInfo();
 				if ($currentUserInfo) {
 					$mResult = $this->loginCurrentUser();
-					if (!$mResult && !$this->bIsDemo) {
+					if (!$mResult && !$this->isDemoUser($oUser->PublicId)) {
 						if ($this->updateUserPassword($currentUserInfo)) {
 							$mResult = $this->loginCurrentUser();
 						}
