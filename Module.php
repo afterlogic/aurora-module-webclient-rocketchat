@@ -75,6 +75,29 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->subscribeEvent('Core::DeleteUser::before', array($this, 'onBeforeDeleteUser'));
 	}
 
+	protected function getClient($iTenantId = null)
+	{
+		$mResult = null;
+		$oSettings = $this->GetModuleSettings();
+		$sChatUrl = '';
+		if (isset($iTenantId)) {
+			$oTenant = Api::getTenantById($iTenantId);
+			if ($oTenant) {
+				$sChatUrl = $oSettings->GetTenantValue($oTenant->Name, 'ChatUrl', '');
+			}
+		} else {
+			$sChatUrl = $oSettings->GetValue('ChatUrl', '');
+		}
+		if (!empty($sChatUrl)) {
+			$mResult = new Client([
+				'base_uri' => $sChatUrl,
+				'verify' => false
+			]);
+		}
+
+		return $mResult;
+	}
+
 	/**
 	 * Obtains list of module settings for authenticated user.
 	 * 
@@ -178,28 +201,40 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
-		return $this->oRocketChatSettingsManager->get($this->client, $this->getAdminHeaders($TenantId));
+		return $this->oRocketChatSettingsManager->get(
+			$this->getClient($TenantId), 
+			$this->getAdminHeaders($TenantId)
+		);
 	}
 
 	public function ApplyRocketChatRequiredChanges($TenantId = null)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
-		return $this->oRocketChatSettingsManager->setConfigs($this->client, $this->getAdminHeaders($TenantId));
+		return $this->oRocketChatSettingsManager->setConfigs(
+			$this->getClient($TenantId), 
+			$this->getAdminHeaders($TenantId)
+		);
 	}
 
 	public function ApplyRocketChatTextChanges($TenantId = null)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
-		return $this->oRocketChatSettingsManager->setTexts($this->client, $this->getAdminHeaders($TenantId));
+		return $this->oRocketChatSettingsManager->setTexts(
+			$this->getClient($TenantId), 
+			$this->getAdminHeaders($TenantId)
+		);
 	}
 
 	public function ApplyRocketChatCssChanges($TenantId = null)
 	{
 		\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
-		return $this->oRocketChatSettingsManager->setCss($this->client, $this->getAdminHeaders($TenantId));
+		return $this->oRocketChatSettingsManager->setCss(
+			$this->getClient($TenantId), 
+			$this->getAdminHeaders($TenantId)
+		);
 	}
 
 	public function EntryChatDirect()
@@ -258,24 +293,47 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	protected function getAdminAccount($TenantId = null)
 	{
-		 // TODO: $TenantId
-		if (!isset($this->adminAccount) && $this->client) {
-			try {
-				$res = $this->client->post('api/v1/login', [
-					'form_params' => [
-						'user' => $this->sAdminUser, 
-						'password' => $this->sAdminPass
-					],
-					'http_errors' => false
-				]);
-				if ($res->getStatusCode() === 200) {
-					$this->adminAccount = \json_decode($res->getBody());
-				}		
+		$mResult = false;
+		if (isset($TenantId)) {
+			$oSettings = $this->GetModuleSettings();
+			$oTenant = Api::getTenantById($TenantId);
+			if ($oTenant) {
+				$sAdminUser = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', '');
+				$sAdminPass = $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword', '');
+				try {
+					$res = $this->client->post('api/v1/login', [
+						'form_params' => [
+							'user' => $sAdminUser, 
+							'password' => $sAdminPass
+						],
+						'http_errors' => false
+					]);
+					if ($res->getStatusCode() === 200) {
+						$mResult = \json_decode($res->getBody());
+					}		
+				}
+				catch (ConnectException $oException) {}
 			}
-			catch (ConnectException $oException) {}
+		} else { 
+			if (!isset($this->adminAccount)) {
+				try {
+					$res = $this->client->post('api/v1/login', [
+						'form_params' => [
+							'user' => $this->sAdminUser, 
+							'password' => $this->sAdminPass
+						],
+						'http_errors' => false
+					]);
+					if ($res->getStatusCode() === 200) {
+						$this->adminAccount = \json_decode($res->getBody());
+					}		
+				}
+				catch (ConnectException $oException) {}
+			}
+			$mResult = $this->adminAccount;
 		}
 
-		return $this->adminAccount;
+		return $mResult;
 	}
 
 	protected function getAdminHeaders($TenantId = null)
