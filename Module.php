@@ -49,10 +49,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->sAdminUser = $oSettings->GetValue('AdminUsername', '');
 		$this->sAdminPass = $oSettings->GetValue('AdminPassword', '');
 
-		$this->client = new Client([
-			'base_uri' => $this->sChatUrl,
-			'verify' => false
-		]);
+		if (!empty($this->sChatUrl) && !empty($this->sAdminUser)) {
+			$this->client = new Client([
+				'base_uri' => $this->sChatUrl,
+				'verify' => false
+			]);
+		}
 	}
 
 	protected function isDemoUser($sEmail)
