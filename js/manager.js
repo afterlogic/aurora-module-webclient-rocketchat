@@ -45,8 +45,10 @@ module.exports = function (oAppData) {
 				var Screens = require('%PathToCoreWebclientModule%/js/Screens.js');
 				Screens.initHiddenView(Settings.HashModuleName);
 
-				ModulesManager.run('SettingsWebclient', 'registerSettingsTab', [function () { return require('modules/%ModuleName%/js/views/RocketChatSettingsPaneView.js'); }, Settings.HashModuleName, TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB')]);
-
+				if (Settings.ChatUrl !== '') {
+					ModulesManager.run('SettingsWebclient', 'registerSettingsTab', [function () { return require('modules/%ModuleName%/js/views/RocketChatSettingsPaneView.js'); }, Settings.HashModuleName, TextUtils.i18n('%MODULENAME%/LABEL_SETTINGS_TAB')]);
+				}
+				
 				App.subscribeEvent('Logout', function () {
 					$.removeCookie('RocketChatAuthToken');
 					$.removeCookie('RocketChatUserId');
@@ -91,11 +93,12 @@ module.exports = function (oAppData) {
 				{
 					HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
 				}
-
-				return {
-					item: HeaderItemView,
-					name: sAppHash
-				};
+				if (Settings.ChatUrl !== '') {
+					return {
+						item: HeaderItemView,
+						name: sAppHash
+					};
+				}
 			};
 		}
 
