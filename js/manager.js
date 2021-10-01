@@ -52,9 +52,8 @@ module.exports = function (oAppData) {
 				App.subscribeEvent('Logout', function () {
 					$.removeCookie('RocketChatAuthToken');
 					$.removeCookie('RocketChatUserId');
-					var $chatIframe = $('#rocketchat_iframe').contents().find('#chatIframe');
-					if ($chatIframe && $chatIframe.get(0)) {
-						$chatIframe.get(0).contentWindow.postMessage({
+					if ($('#rocketchat_iframe')) {
+						$('#rocketchat_iframe').get(0).contentWindow.postMessage({
 							externalCommand: 'logout'
 						}, '*');
 					}

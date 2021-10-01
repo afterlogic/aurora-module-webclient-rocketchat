@@ -485,25 +485,25 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$mResult = false;
 
-		$oUser = Api::getAuthenticatedUser();
-		if ($oUser) {
-			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
-			if ($oAccount && $this->client) {
+			if ($this->client) {
 				try {
-					$res = $this->client->post('api/v1/logout', [
-						'form_params' => [
-							'user' => $this->getUserNameFromEmail($oAccount->getLogin()), 
-							'password' => $oAccount->getPassword()
-						],
-						'http_errors' => false
-					]);
-					if ($res->getStatusCode() === 200) {
-						$mResult = \json_decode($res->getBody());
+					$sAuthToken = isset($_COOKIE['RocketChatAuthToken']) ? $_COOKIE['RocketChatAuthToken'] : null;
+					$sUserId = isset($_COOKIE['RocketChatUserId']) ? $_COOKIE['RocketChatUserId'] : null;
+					if ($sAuthToken !== null && $sUserId !== null) {
+						$res = $this->client->post('api/v1/logout', [
+							'headers' => [
+								"X-Auth-Token" => $sAuthToken, 
+								"X-User-Id" => $sUserId,
+							],
+							'http_errors' => false
+						]);
+						if ($res->getStatusCode() === 200) {
+							$mResult = \json_decode($res->getBody());
+						}
 					}
 				}
 				catch (ConnectException $oException) {}
 			}
-		}
 
 		return $mResult;
 	}
