@@ -38,6 +38,14 @@ body, .rc-old.full-page {
   display: none;
 }
 
+
+.rcx-box.rcx-box--full.rcx-sidebar.rcx-css-dacvhu {
+	background: #3d92a4;
+}
+.rcx-sidebar div[data-qa="sidebar-search-result"] {
+  background: #3d92a4;
+}
+
 .rcx-sidebar {
   background: rgba(30, 28, 31, 0.2) !important;
 }
