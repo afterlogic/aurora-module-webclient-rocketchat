@@ -695,23 +695,32 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function onBeforeDeleteUser(&$aArgs, &$mResult)
 	{
+		$client = null;
+		$adminHeaders = null;
 		$oAuthenticatedUser = Api::getAuthenticatedUser();
 		if ($oAuthenticatedUser && $oAuthenticatedUser->isNormalOrTenant() &&
 				$oAuthenticatedUser->Id === (int) $aArgs['UserId']
 		) {
 			// Access is granted
+			$client = $this->client;
+			$adminHeaders = $this->getAdminHeaders();
 		} else {
 			\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
+			$oUser = Api::getUserById((int) $aArgs['UserId']);
+			if ($oUser) {
+				$client = $this->getClient($oUser->IdTenant);
+				$adminHeaders = $this->getAdminHeaders($oUser->IdTenant);
+			}
 		}
 
 		$sUserName = $this->getUserNameFromEmail(Api::getUserPublicIdById($aArgs['UserId']));
 		try {
-			if ($this->client) {
-				$oRes = $this->client->post('api/v1/users.delete', [
+			if ($client) {
+				$oRes = $client->post('api/v1/users.delete', [
 					'form_params' => [
 						'username' => $sUserName
 					],
-					'headers' => $this->getAdminHeaders(),
+					'headers' => $adminHeaders,
 					'http_errors' => false
 				]);
 				if ($oRes->getStatusCode() === 200) {
