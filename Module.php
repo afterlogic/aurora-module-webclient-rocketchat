@@ -405,7 +405,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			}
 			
 			$sLogin = $this->getUserNameFromEmail($sEmail);
-			$sName = $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
+			$sName = isset($oAccount->FriendlyName) && $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
 			try {
 				$res = $this->client->post('api/v1/users.create', [
 					'form_params' => [
