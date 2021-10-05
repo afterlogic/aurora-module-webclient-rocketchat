@@ -24,7 +24,7 @@ function CRocketChatSettingsPaneView()
 	
 	this.bDemo = UserSettings.IsDemo;
 
-	this.sDownloadLink = 'https://rocket.chat/install/#download-rocket';
+	this.sDownloadLink = 'https://rocket.chat/install/#Apps';
 
 	// this.sLogin = ko.observable('');
 	// this.getLoginForCurrentUser();
