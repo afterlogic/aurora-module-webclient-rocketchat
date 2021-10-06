@@ -1,3 +1,8 @@
+/*RocketChat Hot fixes*/
+svg.rc-message-box__action {
+  position: static;
+}
+
 body, .rc-old.full-page {
   background: transparent;
 }
