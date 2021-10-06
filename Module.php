@@ -243,21 +243,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$sContactUuid = $this->oHttp->GetQuery('chat-direct');
 			$oCurrentUser = Api::getAuthenticatedUser();
 			$oContact = ContactsModule::Decorator()->GetContact($sContactUuid, $oCurrentUser->Id);
-			$oUser = Api::getUserById($oContact->IdUser);
+			$oUser = $oContact ? Api::getUserById($oContact->IdUser) : null;
 			if ($oCurrentUser && $oUser && $oCurrentUser->IdTenant === $oUser->IdTenant) {
 				$sDirect = $this->GetLoginForEmail($oUser->PublicId);
 
 				if ($sDirect) {
 					$this->showChat('direct/' . $sDirect . '?layout=embedded');
 				} else {
-					$this->showChat();
+					$this->showError('User not found');
 				}
 			}
 			else {
-				$this->showChat();
+				$this->showError('User not found');
 			}
 		} catch (ApiException $oEx) {
-			$this->showChat();
+			$this->showError('User not found');
 		}
 	}
 
@@ -276,6 +276,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 				'{{URL}}' => $this->sChatUrl . $sUrl
 			]);
 		}
+	}
+
+	protected function showError($sMessage= '')
+	{
+		echo $sMessage;
 	}
 
 	protected function getUserNameFromEmail($sEmail)
