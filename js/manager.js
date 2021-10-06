@@ -74,8 +74,7 @@ module.exports = function (oAppData) {
 								iHeight = 600,
 								iTop = Math.ceil((iScreenHeight - iHeight) / 2)
 							;
-					
-							WindowOpener.open('?chat-direct=' + this.email() + '&' + new Date().getTime(), 'Chat', false, ',width=' + iWidth + ',height=' + iHeight + ',top=' + iTop + ',left=' + iLeft);
+							WindowOpener.open('?chat-direct=' + this.uuid() + '&' + new Date().getTime(), 'Chat', false, ',width=' + iWidth + ',height=' + iHeight + ',top=' + iTop + ',left=' + iLeft);
 						},
 						'Visible': ko.computed(function () { 
 							return oParams.Contact.team() && !oParams.Contact.itsMe();

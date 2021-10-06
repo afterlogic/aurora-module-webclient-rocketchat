@@ -8,6 +8,7 @@
 namespace Aurora\Modules\RocketChatWebclient;
 
 use Aurora\Api;
+use Aurora\Modules\Contacts\Module as ContactsModule;
 use Aurora\Modules\Core\Module as CoreModule;
 use Aurora\System\Enums\UserRole;
 use Aurora\System\Exceptions\ApiException;
@@ -239,12 +240,20 @@ class Module extends \Aurora\System\Module\AbstractModule
 		try {
 			Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 			
-			$sEmail = $this->oHttp->GetQuery('chat-direct');
-			$sDirect = $this->GetLoginForEmail($sEmail);
+			$sContactUuid = $this->oHttp->GetQuery('chat-direct');
+			$oCurrentUser = Api::getAuthenticatedUser();
+			$oContact = ContactsModule::Decorator()->GetContact($sContactUuid, $oCurrentUser->Id);
+			$oUser = Api::getUserById($oContact->IdUser);
+			if ($oCurrentUser && $oUser && $oCurrentUser->IdTenant === $oUser->IdTenant) {
+				$sDirect = $this->GetLoginForEmail($oUser->PublicId);
 
-			if ($sDirect) {
-				$this->showChat('direct/' . $sDirect . '?layout=embedded');
-			} else {
+				if ($sDirect) {
+					$this->showChat('direct/' . $sDirect . '?layout=embedded');
+				} else {
+					$this->showChat();
+				}
+			}
+			else {
 				$this->showChat();
 			}
 		} catch (ApiException $oEx) {
