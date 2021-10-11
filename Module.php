@@ -298,17 +298,19 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function EntryChat()
 	{
-		$this->showChat();
+		$oIntegrator = \Aurora\System\Managers\Integrator::getInstance();
+		$this->showChat('', $oIntegrator->buildHeadersLink());
 	}
 
-	protected function showChat($sUrl = '')
+	protected function showChat($sUrl = '', $sIntegratorLinks = '')
 	{
 		$aUser = $this->initChat();
 		$sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
 		if (\is_string($sResult)) {
 			echo strtr($sResult, [
 				'{{TOKEN}}' => $aUser ? $aUser['authToken'] : '',
-				'{{URL}}' => $this->sChatUrl . $sUrl
+				'{{URL}}' => $this->sChatUrl . $sUrl,
+				'{{IntegratorLinks}}' => $sIntegratorLinks,
 			]);
 		}
 	}
