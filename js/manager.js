@@ -12,6 +12,8 @@ module.exports = function (oAppData) {
 		
 		WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),
 		
+		oOpenedWindows = [],
+		
 		HeaderItemView = null
 	;
 	
@@ -65,16 +67,32 @@ module.exports = function (oAppData) {
 						'Text': TextUtils.i18n('%MODULENAME%/ACTION_CHAT_WITH_CONTACT'),
 						'CssClass': 'chat',
 						'Handler': function () {
-							var
-								iScreenWidth = window.screen.width,
-								iWidth = 360,
-								iLeft = Math.ceil((iScreenWidth - iWidth) / 2),
-						
-								iScreenHeight = window.screen.height,
-								iHeight = 600,
-								iTop = Math.ceil((iScreenHeight - iHeight) / 2)
-							;
-							WindowOpener.open('?chat-direct=' + this.uuid() + '&' + new Date().getTime(), 'Chat', false, ',width=' + iWidth + ',height=' + iHeight + ',top=' + iTop + ',left=' + iLeft);
+							var oWin = oOpenedWindows[this.uuid()];
+							if (oWin && !oWin.closed)
+							{
+								oWin.focus();
+							}
+							else
+							{
+								var
+									iScreenWidth = window.screen.width,
+									iWidth = 360,
+									iLeft = Math.ceil((iScreenWidth - iWidth) / 2),
+
+									iScreenHeight = window.screen.height,
+									iHeight = 600,
+									iTop = Math.ceil((iScreenHeight - iHeight) / 2),
+
+									sUrl = '?chat-direct=' + this.uuid() + '&' + new Date().getTime(),
+									sName = 'Chat',
+									sSize = ',width=' + iWidth + ',height=' + iHeight + ',top=' + iTop + ',left=' + iLeft
+								;
+								oWin = WindowOpener.open(sUrl, sName, false, sSize);
+								if (oWin)
+								{
+									oOpenedWindows[this.uuid()] = oWin;
+								}
+							}
 						},
 						'Visible': ko.computed(function () { 
 							return oParams.Contact.team() && !oParams.Contact.itsMe();
