@@ -15,7 +15,12 @@ use Aurora\System\Exceptions\ApiException;
 use Aurora\System\Utils;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\MessageFormatter;
+use GuzzleHttp\Middleware;
 use Illuminate\Support\Str;
+use Monolog\Handler\RotatingFileHandler;
+use Monolog\Logger;
 
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
@@ -43,6 +48,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 	
 	protected $adminAccount = null;
 
+	protected $stack = null;
+
 	protected function initConfig()
 	{
 		$oSettings = $this->GetModuleSettings();
@@ -52,8 +59,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		if (!empty($this->sChatUrl) && !empty($this->sAdminUser)) {
 			$this->client = new Client([
-				'base_uri' => $this->sChatUrl,
-				'verify' => false
+				'base_uri' => \rtrim($this->sChatUrl, '/') . '/api/v1/',
+				'verify' => false,
+				'handler' => $this->stack
 			]);
 		}
 	}
@@ -64,8 +72,33 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $oDemoModePlugin && $oDemoModePlugin->CheckDemoUser($sEmail);
 	}
 
+	protected function initLogging()
+	{
+		$oSettings =& Api::GetSettings(); 
+		if ($oSettings->GetValue('EnableLogging', false)) {
+			$stack = HandlerStack::create();
+			collect([
+				'REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}',
+				'RESPONSE: {code} - {res_body}',
+			])->each(function ($messageFormat) use ($stack) {
+				// We'll use unshift instead of push, to add the middleware to the bottom of the stack, not the top
+				$stack->unshift(
+					Middleware::log(
+						with(new Logger('rocketchat-log'))->pushHandler(
+							new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt')
+						),
+						new MessageFormatter($messageFormat)
+					)
+				);
+			});
+			$this->stack = $stack;
+		}
+	}
+
 	public function init() 
 	{
+		$this->initLogging();
+
 		$this->oRocketChatSettingsManager = new Managers\RocketChatSettings\Manager($this);
 
 		$this->initConfig();
@@ -95,9 +128,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 			}
 		}
 		if (!empty($sChatUrl)) {
+
 			$mResult = new Client([
-				'base_uri' => $sChatUrl,
-				'verify' => false
+				'base_uri' => \rtrim($sChatUrl, '/') . '/api/v1/',
+				'verify' => false,
+				'handler' => $this->stack
 			]);
 		}
 
@@ -332,7 +367,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$client = $this->getClient($TenantId);
 		try {
 			if ($client && $aAdminCreds) {
-				$res = $client->post('api/v1/login', [
+				$res = $client->post('login', [
 					'form_params' => [
 						'user' => $aAdminCreds['AdminUser'], 
 						'password' => $aAdminCreds['AdminPass']
@@ -374,7 +409,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sUserName = $this->getUserNameFromEmail($sEmail);
 		try {
 			if ($this->client) {
-				$res = $this->client->get('api/v1/users.info', [
+				$res = $this->client->get('users.info', [
 					'query' => [
 						'username' => $this->getUserNameFromEmail($sEmail)
 					],
@@ -387,7 +422,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			}
 		} catch (ConnectException $oException) {
 			\Aurora\System\Api::Log('Cannot get ' . $sUserName . ' user info. Exception is below.');
-			\Aurora\System\Api::Log($oException);
+			\Aurora\System\Api::LogException($oException);
 		}
 
 		return $mResult;
@@ -411,7 +446,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($sEmail);
 		if ($oAccount && $this->client) {
-			$sEmail = $oAccount->getLogin();
 			if (!$this->isDemoUser($sEmail)) {
 				$sPassword = $oAccount->getPassword();
 			} else {
@@ -421,7 +455,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$sLogin = $this->getUserNameFromEmail($sEmail);
 			$sName = isset($oAccount->FriendlyName) && $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
 			try {
-				$res = $this->client->post('api/v1/users.create', [
+				$res = $this->client->post('users.create', [
 					'form_params' => [
 						'email' => $sEmail, 
 						'name' => $sName, 
@@ -436,7 +470,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 			} catch (ConnectException $oException) {
 				\Aurora\System\Api::Log('Cannot create ' . $sEmail . ' user. Exception is below.');
-				\Aurora\System\Api::Log($oException);
+				\Aurora\System\Api::LogException($oException);
 			}
 		}
 		return $mResult;
@@ -469,9 +503,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 					$sPassword = $this->sDemoPass;
 				}
 				try {
-					$res = $this->client->post('api/v1/login', [
+					$res = $this->client->post('login', [
 						'form_params' => [
-							'user' => $this->getUserNameFromEmail($oAccount->getLogin()), 
+						'user' => $this->getUserNameFromEmail($oUser->PublicId), 
 							'password' => $sPassword
 						],
 						'http_errors' => false
@@ -504,7 +538,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 					$sAuthToken = isset($_COOKIE['RocketChatAuthToken']) ? $_COOKIE['RocketChatAuthToken'] : null;
 					$sUserId = isset($_COOKIE['RocketChatUserId']) ? $_COOKIE['RocketChatUserId'] : null;
 					if ($sAuthToken !== null && $sUserId !== null) {
-						$res = $this->client->post('api/v1/logout', [
+						$res = $this->client->post('logout', [
 							'headers' => [
 								"X-Auth-Token" => $sAuthToken, 
 								"X-User-Id" => $sUserId,
@@ -516,7 +550,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 						}
 					}
 				}
-				catch (ConnectException $oException) {}
+				catch (ConnectException $oException) {
+					Api::LogException($oException);
+				}
 			}
 
 		return $mResult;
@@ -525,7 +561,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected function updateLanguage($sUserId, $sToken, $sLang)
 	{
 		if ($this->client) {
-			$this->client->post('api/v1/users.setPreferences', [
+			$this->client->post('users.setPreferences', [
 				'form_params' => [
 					'userId' => $sUserId, 
 					'data' => [
@@ -548,7 +584,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if ($oUser) {
 			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
 			if ($oAccount && $this->client) {
-				$res = $this->client->post('api/v1/users.update', [
+				$res = $this->client->post('users.update', [
 					'form_params' => [
 						'userId' => $userInfo->user->_id, 
 						'data' => [
@@ -576,7 +612,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$sAuthToken = Utils::DecryptValue($sAuthToken);
 				try
 				{
-					$res = $this->client->get('api/v1/me', [
+					$res = $this->client->get('me', [
 						'headers' => [
 							"X-Auth-Token" => $sAuthToken, 
 							"X-User-Id" => $sUserId,
@@ -641,10 +677,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$oUser = Api::getAuthenticatedUser();
 		if ($oUser) {
-			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
-			if ($oAccount) {
-				$mResult = $this->getUserNameFromEmail($oAccount->getLogin());
-			}
+			$mResult = $this->getUserNameFromEmail($oUser->PublicId);
 		}
 
 		return $mResult;
@@ -671,7 +704,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if ($aCurUser && $this->client) {
 			try
 			{
-				$res = $this->client->get('api/v1/subscriptions.get', [
+				$res = $this->client->get('subscriptions.get', [
 					'headers' => [
 						"X-Auth-Token" => $aCurUser['authToken'], 
 						"X-User-Id" => $aCurUser['userId'],
@@ -730,7 +763,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sUserName = $this->getUserNameFromEmail(Api::getUserPublicIdById($aArgs['UserId']));
 		try {
 			if ($client) {
-				$oRes = $client->post('api/v1/users.delete', [
+				$oRes = $client->post('users.delete', [
 					'form_params' => [
 						'username' => $sUserName
 					],
@@ -744,7 +777,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		catch (ConnectException $oException) {
 			\Aurora\System\Api::Log('Cannot delete ' . $sUserName . ' user from RocketChat. Exception is below.');
-			\Aurora\System\Api::Log($oException);
+			\Aurora\System\Api::LogException($oException);
 		}
 	}
 }
