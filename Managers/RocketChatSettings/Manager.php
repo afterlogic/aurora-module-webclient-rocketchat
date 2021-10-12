@@ -100,7 +100,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 	private function setSetting($sName, $mValue, $oClient, $aAdminHeaders)
 	{
 		try {
-			$oRes = $oClient->post('api/v1/settings/' . $sName, [
+			$oRes = $oClient->post('settings/' . $sName, [
 				'json' => [
 					'value' => $mValue,
 				],
@@ -125,7 +125,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 	private function getSetting($sName, $oClient, $aAdminHeaders)
 	{
 		try {
-			$res = $oClient->get('api/v1/settings/' . $sName, [
+			$res = $oClient->get('settings/' . $sName, [
 				'headers' => $aAdminHeaders,
 				'http_errors' => false
 			]);
