@@ -8,6 +8,7 @@ var
 
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
+	UserSettings = require('%PathToCoreWebclientModule%/js/Settings.js'),
 
 	Settings = require('modules/%ModuleName%/js/Settings.js')
 ;
@@ -32,12 +33,26 @@ _.extendOwn(CMainView.prototype, CAbstractScreenView.prototype);
 CMainView.prototype.ViewTemplate = '%ModuleName%_MainView';
 CMainView.prototype.ViewConstructorName = 'CMainView';
 
+CMainView.prototype.setAuroraThemeToRocketChat = function (oIframe) {
+	function _setTheme() {
+		oIframe.contentWindow.postMessage({
+			externalCommand: 'set-aurora-theme',
+			theme: UserSettings.Theme
+		}, '*');
+	};
+	setTimeout(_setTheme, 500); // to apply the theme more immediate if possible
+	setTimeout(_setTheme, 1000); // this will most likely work first
+	setTimeout(_setTheme, 2000); // to be sure the theme will be applied
+};
+
 CMainView.prototype.onLoad = function () {
 	if (this.iframeDom() && this.iframeDom().length > 0) {
 		this.iframeDom()[0].contentWindow.postMessage({
 			externalCommand: 'login-with-token',
 			token: Settings.ChatAuthToken
 		}, '*');
+
+		this.setAuroraThemeToRocketChat(this.iframeDom()[0]);
 
 		window.addEventListener('message', function(oEvent) {
 			if (oEvent && oEvent.data && oEvent.data.eventName === 'notification') {
