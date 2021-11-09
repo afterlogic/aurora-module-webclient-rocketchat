@@ -127,3 +127,26 @@ body, .rc-old.full-page {
   background-color: #32c8b6 !important;
   border: solid 1px #2db3a3 !important;
 }
+
+.aurora-theme-DeepForest .rcx-sidebar .rcx-button--ghost {
+  background: -webkit-linear-gradient(bottom, #69A984 0%, #57B0B1 100%);
+  color: #F7FFDC;
+}
+.aurora-theme-DeepForest .rcx-sidebar {
+  background: transparent !important;
+}
+.aurora-theme-DeepForest .rooms-list {
+  background: rgba(0, 0, 0, 0.5);
+}
+.aurora-theme-DeepForest .rcx-sidebar-item--selected, .rcx-sidebar-item--selected:hover {
+  background: #57B183 !important;
+}
+.aurora-theme-DeepForest .main-content {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+.aurora-theme-DeepForest .main-content > div,
+.aurora-theme-DeepForest .main-content > section {
+  background: white;
+  margin: 5px 0 0 5px;
+}
