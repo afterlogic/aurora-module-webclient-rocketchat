@@ -18,5 +18,9 @@
 	"UnreadCounterIntervalInSeconds": [
 		15,
 		"int"
+	],
+	"EnableLogging": [
+		false,
+		"bool"
 	]
 }

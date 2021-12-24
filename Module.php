@@ -56,6 +56,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->sChatUrl = $oSettings->GetValue('ChatUrl', '');		
 		$this->sAdminUser = $oSettings->GetValue('AdminUsername', '');
 		$this->sAdminPass = $oSettings->GetValue('AdminPassword', '');
+		Api::AddSecret($this->sAdminPass );
 
 		if (!empty($this->sChatUrl) && !empty($this->sAdminUser)) {
 			$this->client = new Client([
@@ -74,17 +75,21 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	protected function initLogging()
 	{
-		$oSettings =& Api::GetSettings(); 
-		if ($oSettings->GetValue('EnableLogging', false)) {
+		if ($this->getConfig('EnableLogging', false)) {
 			$stack = HandlerStack::create();
 			collect([
 				'REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}',
 				'RESPONSE: {code} - {res_body}',
 			])->each(function ($messageFormat) use ($stack) {
 				// We'll use unshift instead of push, to add the middleware to the bottom of the stack, not the top
+				$oLogger = new Logger('rocketchat-log');
+				$oLogger->pushProcessor(function ($record) {
+					$record['message'] = str_replace(Api::$aSecretWords, '*****', $record['message']);
+					return $record;
+				});
 				$stack->unshift(
 					Middleware::log(
-						with(new Logger('rocketchat-log'))->pushHandler(
+						$oLogger->pushHandler(
 							new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt')
 						),
 						new MessageFormatter($messageFormat)
@@ -353,6 +358,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$mResult['AdminUser'] = $this->sAdminUser;
 			$mResult['AdminPass'] = $this->sAdminPass;
 		}
+		if (isset($mResult['AdminPass'])) {
+			Api::AddSecret($mResult['AdminPass']);
+		}
 
 		return $mResult;
 	}
@@ -453,6 +461,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 			} else {
 				$sPassword = $this->sDemoPass;
 			}
+
+			Api::AddSecret($sPassword);
 			
 			$sLogin = $this->getUserNameFromEmail($sEmail);
 			$sName = isset($oAccount->FriendlyName) && $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
@@ -504,6 +514,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				} else {
 					$sPassword = $this->sDemoPass;
 				}
+				Api::AddSecret($sPassword);
 				try {
 					$res = $this->client->post('login', [
 						'form_params' => [
@@ -586,6 +597,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if ($oUser) {
 			$oAccount = CoreModule::Decorator()->GetAccountUsedToAuthorize($oUser->PublicId);
 			if ($oAccount && $this->client) {
+				Api::AddSecret($oAccount->getPassword());
 				$res = $this->client->post('users.update', [
 					'form_params' => [
 						'userId' => $userInfo->user->_id, 
@@ -612,6 +624,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$sUserId = isset($_COOKIE['RocketChatUserId']) ? $_COOKIE['RocketChatUserId'] : null;
 			if ($sAuthToken !== null && $sUserId !== null) {
 				$sAuthToken = Utils::DecryptValue($sAuthToken);
+				Api::AddSecret($sAuthToken);
 				try
 				{
 					$res = $this->client->get('me', [
