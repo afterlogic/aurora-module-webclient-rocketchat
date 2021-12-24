@@ -148,6 +148,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
+
+		// var_dump('asdasd');
+		// exit();
+
 		$sChatUrl = '';
 		$sAdminUsername = '';
 
@@ -170,7 +174,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 		
 		$oUser = \Aurora\System\Api::getAuthenticatedUser();
-		if ($oUser instanceof \Aurora\Modules\Core\Models\User)
+		if ($oUser instanceof \Aurora\Modules\Core\Classes\User)
 		{
 			if ($oUser->isNormalOrTenant())
 			{
@@ -277,7 +281,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			
 			$sContactUuid = $this->oHttp->GetQuery('chat-direct');
 			$oCurrentUser = Api::getAuthenticatedUser();
-			$oContact = ContactsModule::Decorator()->GetContact($sContactUuid, $oCurrentUser->Id);
+			$oContact = ContactsModule::Decorator()->GetContact($sContactUuid, $oCurrentUser->EntityId);
 			$oUser = $oContact ? Api::getUserById($oContact->IdUser) : null;
 			if ($oCurrentUser && $oUser && $oCurrentUser->IdTenant === $oUser->IdTenant) {
 				$sDirect = $this->GetLoginForEmail($oUser->PublicId);
