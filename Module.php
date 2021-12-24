@@ -19,8 +19,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\MessageFormatter;
 use GuzzleHttp\Middleware;
 use Illuminate\Support\Str;
-use Monolog\Handler\RotatingFileHandler;
-use Monolog\Logger;
+// use Monolog\Handler\RotatingFileHandler;
+// use Monolog\Logger;
 
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
@@ -72,32 +72,32 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $oDemoModePlugin && $oDemoModePlugin->CheckDemoUser($sEmail);
 	}
 
-	protected function initLogging()
-	{
-		$oSettings =& Api::GetSettings(); 
-		if ($oSettings->GetValue('EnableLogging', false)) {
-			$stack = HandlerStack::create();
-			collect([
-				'REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}',
-				'RESPONSE: {code} - {res_body}',
-			])->each(function ($messageFormat) use ($stack) {
-				// We'll use unshift instead of push, to add the middleware to the bottom of the stack, not the top
-				$stack->unshift(
-					Middleware::log(
-						with(new Logger('rocketchat-log'))->pushHandler(
-							new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt')
-						),
-						new MessageFormatter($messageFormat)
-					)
-				);
-			});
-			$this->stack = $stack;
-		}
-	}
+	// protected function initLogging()
+	// {
+	// 	$oSettings =& Api::GetSettings(); 
+	// 	if ($oSettings->GetValue('EnableLogging', false)) {
+	// 		$stack = HandlerStack::create();
+	// 		collect([
+	// 			'REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}',
+	// 			'RESPONSE: {code} - {res_body}',
+	// 		])->each(function ($messageFormat) use ($stack) {
+	// 			// We'll use unshift instead of push, to add the middleware to the bottom of the stack, not the top
+	// 			$stack->unshift(
+	// 				Middleware::log(
+	// 					with(new Logger('rocketchat-log'))->pushHandler(
+	// 						new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt')
+	// 					),
+	// 					new MessageFormatter($messageFormat)
+	// 				)
+	// 			);
+	// 		});
+	// 		$this->stack = $stack;
+	// 	}
+	// }
 
 	public function init() 
 	{
-		$this->initLogging();
+		// $this->initLogging();
 
 		$this->oRocketChatSettingsManager = new Managers\RocketChatSettings\Manager($this);
 
