@@ -85,6 +85,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$oLogger = new Logger('rocketchat-log');
 				$oLogger->pushProcessor(function ($record) {
 					$record['message'] = str_replace(Api::$aSecretWords, '*****', $record['message']);
+					$record['message'] = preg_replace('/(X-Auth-Token|X-2fa-code):(.+?\s)/i', '$1: ***** ', $record['message']);
+					$record['message'] = preg_replace('/("bcrypt"):(.*?\})/i', '$1:"*****"}', $record['message']);
+					$record['message'] = preg_replace('/("authToken"):(.*?,)/i', '$1:"*****",', $record['message']);
 					return $record;
 				});
 				$stack->unshift(
