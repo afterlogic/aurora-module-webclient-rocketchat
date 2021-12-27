@@ -13,7 +13,9 @@ module.exports = {
 	ChatUrl: '',
 	ChatAuthToken: '',
 	UnreadCounterIntervalInSeconds: 15,
-	
+
+	AdminUsername: '',
+
 	/**
 	 * Initializes settings from AppData object sections.
 	 * 
@@ -28,6 +30,14 @@ module.exports = {
 			this.ChatUrl = Types.pString(oAppDataSection.ChatUrl);
 			this.ChatAuthToken = Types.pString(oAppDataSection.ChatAuthToken);
 			this.UnreadCounterIntervalInSeconds = Types.pInt(oAppDataSection.UnreadCounterIntervalInSeconds, this.UnreadCounterIntervalInSeconds);
+
+			this.AdminUsername = Types.pString(oAppDataSection.AdminUsername);
 		}
+	},
+
+	updateAdmin: function (parameters)
+	{
+		this.ChatUrl = Types.pString(parameters.ChatUrl);
+		this.AdminUsername = Types.pString(parameters.AdminUsername);
 	}
 };

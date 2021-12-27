@@ -1,0 +1,119 @@
+<div class="panel_top">
+	<h2 class="settings_heading" data-bind="i18n: {'key': '%MODULENAME%/HEADING_SETTINGS_TAB'}"></h2>
+</div>
+
+<div class="panel_center">
+	<div class="fields">
+		<div class="fieldset">
+			<div class="row">
+				<span class="label" data-bind="i18n: {'key': '%MODULENAME%/ADMIN_CHAT_URL_LABEL'}"></span>
+				<span class="value">
+					<input class="input" data-bind="value: chatUrl" />
+				</span>
+			</div>
+			<div class="row">
+				<span class="label" data-bind="i18n: {'key': '%MODULENAME%/ADMIN_USERNAME_LABEL'}"></span>
+				<span class="value">
+					<input class="input" data-bind="value: adminUsername" />
+				</span>
+			</div>
+			<div class="row">
+				<span class="label" data-bind="i18n: {'key': '%MODULENAME%/ADMIN_PASSWORD_LABEL'}"></span>
+				<span class="value">
+					<input class="input" type="password" autocomplete="new-password" data-bind="value: adminPassword" />
+				</span>
+			</div>
+		</div>
+		<div class="buttons">
+			<span class="button" data-bind="click: save, visible: !isSaving()">
+				<span data-bind="i18n: {'key': 'COREWEBCLIENT/ACTION_SAVE'}"></span>
+			</span>
+			<span class="button" data-bind="visible: isSaving()">
+				<span data-bind="i18n: {'key': 'COREWEBCLIENT/ACTION_SAVE_IN_PROGRESS'}"></span>
+			</span>
+		</div>
+	</div>
+</div>
+
+<div class="panel_top">
+	<h2 class="settings_heading" style="padding-top: 15px;" data-bind="i18n: {'key': '%MODULENAME%/HEADING_SYSTEM_SETTINGS_TAB'}"></h2>
+</div>
+
+<div class="panel_center">
+	<div class="fields">
+		<div class="fieldset">
+			<div class="hint row">
+				<span class="value" data-bind="i18n: {'key': '%MODULENAME%/HINT_CONFIGS_NEEDED_VALUES'}"></span>
+			</div>
+			<div class="hint row">
+				<ul style="margin-bottom: 0;">
+					<li>
+						<span>Accounts->Registration->Password Reset: </span>
+						<span data-bind="i18n: {'key': '%MODULENAME%/LABEL_STATE_DISABLED'}"></span>
+					</li>
+					<li>
+						<span>General->Restrict access inside any Iframe: </span>
+						<span data-bind="i18n: {'key': '%MODULENAME%/LABEL_STATE_DISABLED'}"></span>
+					</li>
+					<li>
+						<span>General->Iframe Integration->Enable Send: </span>
+						<span data-bind="i18n: {'key': '%MODULENAME%/LABEL_STATE_ENABLED'}"></span>
+					</li>
+					<li>
+						<span>General->Iframe Integration->Enable Receive: </span>
+						<span data-bind="i18n: {'key': '%MODULENAME%/LABEL_STATE_ENABLED'}"></span>
+					</li>
+					<li>
+						<span>Rate Limiter->API Rate Limiter->Enable Rate Limiter: </span>
+						<span data-bind="i18n: {'key': '%MODULENAME%/LABEL_STATE_DISABLED'}"></span>
+					</li>
+				</ul>
+			</div>
+			<div class="hint row" data-bind="visible: !configsRequestIsInProgress()">
+				<span class="value" data-bind="i18n: {'key': '%MODULENAME%/HINT_CONFIGS_CORRECT'}, visible: configsAreCorrect"></span>
+				<span class="value" style="color: red;" data-bind="i18n: {'key': '%MODULENAME%/HINT_CONFIGS_INCORRECT'}, visible: !configsAreCorrect()"></span>
+			</div>
+			<div class="row buttons" style="text-align: left; margin-bottom: 0;">
+				<span class="button" data-bind="command: applyRequiredChangesCommand, visible: !applyRequiredChangesInProgress()">
+					<span data-bind="i18n: {'key': '%MODULENAME%/ACTION_APPLY_CONFIGS'}"></span>
+				</span>
+				<span class="button" data-bind="visible: applyRequiredChangesInProgress">
+					<span data-bind="i18n: {'key': '%MODULENAME%/ACTION_APPLY_CONFIGS_IN_PROGRESS'}"></span>
+				</span>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="panel_top">
+	<h2 class="settings_heading" style="padding-top: 15px;" data-bind="i18n: {'key': '%MODULENAME%/HEADING_APPEARANCE_SETTINGS_TAB'}"></h2>
+</div>
+
+<div class="panel_center">
+	<div class="fields">
+		<div class="fieldset">
+			<div class="hint row">
+				<span class="value" data-bind="i18n: {'key': '%MODULENAME%/HINT_APPLY_TEXTS'}"></span>
+			</div>
+			<div class="row buttons" style="text-align: left;">
+				<span class="button" data-bind="command: applyTextChangesCommand, visible: !applyTextChangesInProgress()">
+					<span data-bind="i18n: {'key': '%MODULENAME%/ACTION_APPLY_TEXTS'}"></span>
+				</span>
+				<span class="button" data-bind="visible: applyTextChangesInProgress">
+					<span data-bind="i18n: {'key': '%MODULENAME%/ACTION_APPLY_CONFIGS_IN_PROGRESS'}"></span>
+				</span>
+			</div>
+			<div class="hint row">
+				<span class="value" data-bind="i18n: {'key': '%MODULENAME%/HINT_APPLY_CSS'}"></span>
+			</div>
+			<div class="row buttons" style="text-align: left; margin-bottom: 0;">
+				<span class="button" data-bind="command: applyCssChangesCommand, visible: !applyCssChangesInProgress()">
+					<span data-bind="i18n: {'key': '%MODULENAME%/ACTION_APPLY_CSS'}"></span>
+				</span>
+				<span class="button" data-bind="visible: applyCssChangesInProgress">
+					<span data-bind="i18n: {'key': '%MODULENAME%/ACTION_APPLY_CONFIGS_IN_PROGRESS'}"></span>
+				</span>
+			</div>
+		</div>
+	</div>
+</div>
