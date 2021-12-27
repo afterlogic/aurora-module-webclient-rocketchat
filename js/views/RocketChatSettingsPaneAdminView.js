@@ -5,10 +5,10 @@ const
 	ko = require('knockout'),
 
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
+	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
 
 	AlertPopup = require('%PathToCoreWebclientModule%/js/popups/AlertPopup.js'),
-	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
 	Api = require('%PathToCoreWebclientModule%/js/Api.js'),
 	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	Popups = require('%PathToCoreWebclientModule%/js/Popups.js'),
@@ -17,6 +17,7 @@ const
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
 	CAbstractSettingsFormView = ModulesManager.run('AdminPanelWebclient', 'getAbstractSettingsFormViewClass'),
 
+	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	Settings = require('modules/%ModuleName%/js/Settings.js'),
 
 	FAKE_PASS = '      '
@@ -28,6 +29,9 @@ const
 function CRocketChatSettingsPaneAdminView()
 {
 	CAbstractSettingsFormView.call(this, '%ModuleName%');
+	
+	this.entityId = null;
+	this.tenantData = {};
 
 	this.chatUrl = ko.observable(Settings.ChatUrl);
 	this.adminUsername = ko.observable(Settings.AdminUsername);
@@ -61,6 +65,8 @@ CRocketChatSettingsPaneAdminView.prototype.ViewTemplate = '%ModuleName%_RocketCh
 
 CRocketChatSettingsPaneAdminView.prototype.onRouteChild = function ()
 {
+	console.log('onRouteChild', this.entityId);
+	this.getModuleSettings();
 	this.getRocketChatSettings();
 };
 
@@ -80,8 +86,13 @@ CRocketChatSettingsPaneAdminView.prototype.getCurrentValues = function ()
 
 CRocketChatSettingsPaneAdminView.prototype.revertGlobalValues = function ()
 {
-	this.chatUrl(Settings.ChatUrl);
-	this.adminUsername(Settings.AdminUsername);
+	if (this.entityId) {
+		this.chatUrl(Types.pString(this.tenantData.ChatUrl));
+		this.adminUsername(Types.pString(this.tenantData.AdminUsername));
+	} else {
+		this.chatUrl(Settings.ChatUrl);
+		this.adminUsername(Settings.AdminUsername);
+	}
 	this.adminPassword(FAKE_PASS);
 };
 
@@ -94,22 +105,40 @@ CRocketChatSettingsPaneAdminView.prototype.getParametersForSave = function ()
 	if (FAKE_PASS !== this.adminPassword()) {
 		parameters.AdminPassword = this.adminPassword();
 	}
+	if (this.entityId) {
+		parameters.TenantId = this.entityId;
+	}
 	return parameters;
 };
 
 CRocketChatSettingsPaneAdminView.prototype.applySavedValues = function (parameters)
 {
-	Settings.updateAdmin(parameters);
+	if (!this.entityId) {
+		Settings.updateAdmin(parameters);
+	}
+	this.getRocketChatSettings();
 };
 
 CRocketChatSettingsPaneAdminView.prototype.setAccessLevel = function (entityType, entityId)
 {
-	this.visible(entityType === '');
+	console.log({entityType, entityId});
+	this.visible(entityType === '' || entityType === 'Tenant');
+	this.entityId = entityId;
+};
+
+CRocketChatSettingsPaneAdminView.prototype.getModuleSettings = function () {
+	const parameters = this.entityId ? { TenantId: this.entityId } : {};
+	Ajax.send('GetSettings', parameters, function (response) {
+		this.tenantData = response.Result || {};
+		this.revertGlobalValues();
+		this.updateSavedState();
+	}, this);
 };
 
 CRocketChatSettingsPaneAdminView.prototype.getRocketChatSettings = function () {
 	this.configsRequestIsInProgress(true);
-	Ajax.send('%ModuleName%', 'GetRocketChatSettings', {}, function (response) {
+	const parameters = this.entityId ? { TenantId: this.entityId } : {};
+	Ajax.send('GetRocketChatSettings', parameters, function (response) {
 		this.configsRequestIsInProgress(false);
 		const result = response.Result;
 		if (result) {
@@ -138,7 +167,8 @@ CRocketChatSettingsPaneAdminView.prototype.applyRequiredChanges = function () {
 	}
 
 	this.applyRequiredChangesInProgress(true);
-	Ajax.send('%ModuleName%', 'ApplyRocketChatRequiredChanges', {}, function (response) {
+	const parameters = this.entityId ? { TenantId: this.entityId } : {};
+	Ajax.send('ApplyRocketChatRequiredChanges', parameters, function (response) {
 		this.applyRequiredChangesInProgress(false);
 		const result = response.Result;
 		if (result === true) {
@@ -161,7 +191,8 @@ CRocketChatSettingsPaneAdminView.prototype.applyTextChanges = function () {
 	}
 
 	this.applyTextChangesInProgress(true);
-	Ajax.send('%ModuleName%', 'ApplyRocketChatTextChanges', {}, function (response) {
+	const parameters = this.entityId ? { TenantId: this.entityId } : {};
+	Ajax.send('ApplyRocketChatTextChanges', parameters, function (response) {
 		this.applyTextChangesInProgress(false);
 		const result = response.Result;
 		if (result === true) {
@@ -183,7 +214,8 @@ CRocketChatSettingsPaneAdminView.prototype.applyCssChanges = function () {
 	}
 
 	this.applyCssChangesInProgress(true);
-	Ajax.send('%ModuleName%', 'ApplyRocketChatCssChanges', {}, function (response) {
+	const parameters = this.entityId ? { TenantId: this.entityId } : {};
+	Ajax.send('ApplyRocketChatCssChanges', parameters, function (response) {
 		this.applyCssChangesInProgress(false);
 		const result = response.Result;
 		if (result === true) {
