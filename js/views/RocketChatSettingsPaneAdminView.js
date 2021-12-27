@@ -65,7 +65,6 @@ CRocketChatSettingsPaneAdminView.prototype.ViewTemplate = '%ModuleName%_RocketCh
 
 CRocketChatSettingsPaneAdminView.prototype.onRouteChild = function ()
 {
-	console.log('onRouteChild', this.entityId);
 	this.getModuleSettings();
 	this.getRocketChatSettings();
 };
@@ -121,7 +120,6 @@ CRocketChatSettingsPaneAdminView.prototype.applySavedValues = function (paramete
 
 CRocketChatSettingsPaneAdminView.prototype.setAccessLevel = function (entityType, entityId)
 {
-	console.log({entityType, entityId});
 	this.visible(entityType === '' || entityType === 'Tenant');
 	this.entityId = entityId;
 };
