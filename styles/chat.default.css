@@ -308,3 +308,92 @@ body, .rc-old.full-page {
   color: #ffffff !important;
   text-shadow: none;
 }
+
+.aurora-theme-TorGuardDark .rcx-sidebar {
+  background: transparent !important;
+}
+.aurora-theme-TorGuardDark .rcx-sidebar div[data-qa="sidebar-search-result"] {
+  background: #000000 !important;
+}
+.aurora-theme-TorGuardDark .main-content {
+  border-radius: 5px;
+}
+.aurora-theme-TorGuardDark .main-content > section {
+  border-radius: 5px;
+}
+.aurora-theme-TorGuardDark .rcx-sidebar .rcx-button--ghost {
+  color: #BC4799;
+  background: #000000 !important;
+  border: solid 2px #BC4799 !important;
+  border-radius: 5px;
+}
+.aurora-theme-TorGuardDark .rcx-sidebar .rcx-badge--ghost {
+  background: none !important;
+  color: #ffffff !important;
+}
+.aurora-theme-TorGuardDark .rcx-sidebar .rcx-badge--ghost:hover {
+  border-radius: 11px/10px;
+  background: #BC4799 !important;
+}
+.aurora-theme-TorGuardDark .rcx-sidebar-item,
+.aurora-theme-TorGuardDark .rcx-sidebar-item:hover {
+  border: solid 1px #000000;
+  margin-right: 3px;
+  border-radius: 0;
+}
+.aurora-theme-TorGuardDark .rcx-sidebar-item--selected,
+.aurora-theme-TorGuardDark .rcx-sidebar-item--selected:hover {
+  border: solid 1px #BC4799;
+  background: #000000 !important;
+}
+
+.aurora-theme-TorGuardLight .rcx-sidebar {
+  background: transparent !important;
+}
+.aurora-theme-TorGuardLight .rcx-sidebar div[data-qa="sidebar-search-result"] {
+  color: #000000 !important;
+  background: #ffffff !important;
+}
+.aurora-theme-TorGuardLight .main-content {
+  border-radius: 5px;
+  box-shadow: -1px 0 2px rgb(0 0 0 / 11%);
+  margin-top: 2px;
+}
+.aurora-theme-TorGuardLight .main-content > section {
+  border-radius: 5px;
+}
+.aurora-theme-TorGuardLight .rcx-sidebar .rcx-button--ghost {
+  color: #ffffff;
+  background: #BC4799 !important;
+  border: solid 1px #ffffff !important;
+  border-radius: 5px;
+}
+.aurora-theme-TorGuardLight .rcx-sidebar .rcx-badge--ghost {
+  color: #000000 !important;
+  background: none !important;
+}
+.aurora-theme-TorGuardLight .rcx-sidebar-item--selected .rcx-badge--ghost,
+.aurora-theme-TorGuardLight .rcx-sidebar .rcx-badge--ghost:hover {
+  color: #ffffff !important;
+  border-radius: 11px/10px;
+  background: #BC4799 !important;
+}
+.aurora-theme-TorGuardLight .rcx-sidebar-item,
+.aurora-theme-TorGuardLight .rcx-sidebar-item:hover {
+  border: solid 1px #ffffff;
+  color: #000000 !important;
+  margin-right: 3px;
+  border-radius: 0;
+}
+.aurora-theme-TorGuardLight .rcx-sidebar-item__title {
+  color: #000000 !important;
+}
+.aurora-theme-TorGuardLight .rcx-sidebar-item--selected .rcx-sidebar-item__title {
+  color: #ffffff !important;
+}
+.aurora-theme-TorGuardLight .rcx-sidebar-item--selected,
+.aurora-theme-TorGuardLight .rcx-sidebar-item--selected:hover {
+  border: solid 1px #BC4799;
+  background: #BC4799 !important;
+  color: #ffffff !important;
+}
