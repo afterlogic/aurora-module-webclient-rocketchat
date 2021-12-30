@@ -5,12 +5,11 @@ var
 	ko = require('knockout'),
 
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
+	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 
 	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	CAbstractHeaderItemView = require('%PathToCoreWebclientModule%/js/views/CHeaderItemView.js'),
-	WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),
-
-	Settings = require('modules/%ModuleName%/js/Settings.js')
+	WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js')
 ;
 
 function CHeaderItemView()
@@ -29,7 +28,7 @@ function CHeaderItemView()
 
 CHeaderItemView.prototype.getUnreadCounter = function () {
 	Ajax.send('GetUnreadCounter', {}, function (oResponse) {
-		this.unseenCount(oResponse.Result);
+		this.unseenCount(Types.pInt(oResponse.Result));
 	}, this);
 };
 

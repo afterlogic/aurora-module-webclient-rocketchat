@@ -4,6 +4,7 @@ var
 	_ = require('underscore'),
 	ko = require('knockout'),
 
+	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
 
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
@@ -60,7 +61,7 @@ CMainView.prototype.onLoad = function () {
 			}
 			if (oEvent && oEvent.data && oEvent.data.eventName === 'unread-changed') {
 				var HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
-				HeaderItemView.unseenCount(oEvent.data.data);
+				HeaderItemView.unseenCount(Types.pInt(oEvent.data.data));
 			}
 		}.bind(this));
 	}
