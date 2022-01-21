@@ -19,6 +19,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\MessageFormatter;
 use GuzzleHttp\Middleware;
 use Illuminate\Support\Str;
+
 // use Monolog\Handler\RotatingFileHandler;
 // use Monolog\Logger;
 
@@ -49,6 +50,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected $adminAccount = null;
 
 	protected $stack = null;
+
+	protected $useRandomNames = false;
 
 	protected function initConfig()
 	{
@@ -284,10 +287,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$oContact = ContactsModule::Decorator()->GetContact($sContactUuid, $oCurrentUser->EntityId);
 			$oUser = $oContact ? Api::getUserById($oContact->IdUser) : null;
 			if ($oCurrentUser && $oUser && $oCurrentUser->IdTenant === $oUser->IdTenant) {
-				$sDirect = $this->GetLoginForEmail($oUser->PublicId);
+				$sLogin = $this->getUserNameFromUser($oUser);
 
-				if ($sDirect) {
-					$this->showChat('direct/' . $sDirect . '?layout=embedded');
+				if ($sLogin) {
+					$this->showChat('direct/' . $sLogin . '?layout=embedded');
 				} else {
 					$this->showError('User not found');
 				}
@@ -324,8 +327,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 		echo $sMessage;
 	}
 
-	protected function getUserNameFromEmail($sEmail)
-	{
+	protected function genereteUserNameForEmail($sEmail) {
+		
 		$mResult = false;
 
 		$aEmailParts = explode("@", $sEmail); 
@@ -334,9 +337,40 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 
 		if (isset($aEmailParts[0])) {
-			$mResult = $aEmailParts[0];
+			if ($this->useRandomNames) {
+				$mResult = substr(str_shuffle(md5(time())), 0, 10);
+			} else {
+				$mResult = $aEmailParts[0];
+			}
+
 			if (isset($aDomainParts[0])) {
 				$mResult .= ".". $aDomainParts[0];
+			}
+		}
+
+		return $mResult;
+
+	}
+
+	protected function getUserNameFromUser($oUser)
+	{
+		$mResult = false;
+
+		if ($oUser) {
+
+			if ($this->useRandomNames) {
+
+				$mResult = $oUser->getExtendedProp($this->GetName() . '::Login', false);
+				$mResult = $this->genereteUserNameForEmail($oUser->PublicId);
+				if ($mResult) {
+					$mResult = $oUser->setExtendedProp($this->GetName() . '::Login', $mResult);
+					$oUser->save();
+				}
+			}
+
+			if (!$mResult) {
+
+				$mResult = $this->genereteUserNameForEmail($oUser->PublicId);
 			}
 		}
 		
@@ -409,15 +443,16 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return [];
 	}
 
-	protected function getUserInfo($sEmail)
+	protected function getUserInfo($oUser)
 	{
 		$mResult = false;
-		$sUserName = $this->getUserNameFromEmail($sEmail);
+
+		$sUserName = $this->getUserNameFromUser($oUser);
 		try {
 			if ($this->client) {
 				$res = $this->client->get('users.info', [
 					'query' => [
-						'username' => $this->getUserNameFromEmail($sEmail)
+						'username' => $sUserName
 					],
 					'headers' => $this->getAdminHeaders(),
 					'http_errors' => false
@@ -440,7 +475,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$oUser = Api::getAuthenticatedUser();
 		if ($oUser) {
-			$mResult = $this->getUserInfo($oUser->PublicId);
+			$mResult = $this->getUserInfo($oUser);
 		}
 
 		return $mResult;
@@ -458,7 +493,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$sPassword = $this->sDemoPass;
 			}
 			
-			$sLogin = $this->getUserNameFromEmail($sEmail);
+			$oUser = CoreModule::Decorator()->GetUserUnchecked($oAccount->IdUser);
+			$sLogin = $this->getUserNameFromUser($oUser);
+			$oUser->setExtendedProp($this->GetName() . '::Login', $sLogin);
 			$sName = isset($oAccount->FriendlyName) && $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
 			try {
 				$res = $this->client->post('users.create', [
@@ -511,7 +548,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				try {
 					$res = $this->client->post('login', [
 						'form_params' => [
-						'user' => $this->getUserNameFromEmail($oUser->PublicId), 
+						'user' => $this->getUserNameFromUser($oUser), 
 							'password' => $sPassword
 						],
 						'http_errors' => false
@@ -683,21 +720,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$oUser = Api::getAuthenticatedUser();
 		if ($oUser) {
-			$mResult = $this->getUserNameFromEmail($oUser->PublicId);
-		}
-
-		return $mResult;
-	}
-
-	public function GetLoginForEmail($Email)
-	{
-		$mResult = false;
-		$oUserInfo = $this->getUserInfo($Email);
-		if (!$oUserInfo) {
-			$oUserInfo = $this->createUser($Email);
-		}
-		if ($oUserInfo && $oUserInfo->success) {
-			$mResult = $oUserInfo->user->username;
+			$mResult = $this->getUserNameFromUser($oUser);
 		}
 
 		return $mResult;
@@ -766,7 +789,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 			}
 		}
 
-		$sUserName = $this->getUserNameFromEmail(Api::getUserPublicIdById($aArgs['UserId']));
+		$oUser = CoreModule::Decorator()->GetUserUnchecked($aArgs['UserId']);
+		$sUserName = $this->getUserNameFromUser($oUser);
 		try {
 			if ($client) {
 				$oRes = $client->post('users.delete', [
