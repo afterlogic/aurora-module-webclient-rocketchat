@@ -51,7 +51,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	protected $stack = null;
 
-	protected $useRandomNames = false;
+	protected $useRandomNames = true;
 
 	protected function initConfig()
 	{
@@ -360,11 +360,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 			if ($this->useRandomNames) {
 
-				$mResult = $oUser->getExtendedProp($this->GetName() . '::Login', false);
-				$mResult = $this->genereteUserNameForEmail($oUser->PublicId);
-				if ($mResult) {
-					$mResult = $oUser->setExtendedProp($this->GetName() . '::Login', $mResult);
-					$oUser->save();
+				$mResult = $oUser->{$this->GetName() . '::Login'};
+				if (!$mResult) {
+					$mResult = $this->genereteUserNameForEmail($oUser->PublicId);
+					if ($mResult) {
+						$oUser->{$this->GetName() . '::Login'} =  $mResult;
+						$oUser->save();
+					}	
 				}
 			}
 
@@ -495,7 +497,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			
 			$oUser = CoreModule::Decorator()->GetUserUnchecked($oAccount->IdUser);
 			$sLogin = $this->getUserNameFromUser($oUser);
-			$oUser->setExtendedProp($this->GetName() . '::Login', $sLogin);
+
 			$sName = isset($oAccount->FriendlyName) && $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
 			try {
 				$res = $this->client->post('users.create', [
@@ -510,6 +512,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 				]);
 				if ($res->getStatusCode() === 200) {
 					$mResult = \json_decode($res->getBody());
+				}
+				else {
+					$mResult = \json_decode($res->getBody(), true);
+					if (isset($mResult['error'])) {
+						\Aurora\System\Api::Log($mResult['error']);
+					}
 				}
 			} catch (ConnectException $oException) {
 				\Aurora\System\Api::Log('Cannot create ' . $sEmail . ' user. Exception is below.');
