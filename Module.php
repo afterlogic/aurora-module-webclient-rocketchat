@@ -9,6 +9,7 @@ namespace Aurora\Modules\RocketChatWebclient;
 
 use Aurora\Api;
 use Aurora\Modules\Contacts\Module as ContactsModule;
+use Aurora\Modules\Core\Classes\User;
 use Aurora\Modules\Core\Module as CoreModule;
 use Aurora\System\Enums\UserRole;
 use Aurora\System\Exceptions\ApiException;
@@ -50,8 +51,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected $adminAccount = null;
 
 	protected $stack = null;
-
-	protected $useRandomNames = true;
 
 	protected function initConfig()
 	{
@@ -112,6 +111,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$this->subscribeEvent('Login::after', array($this, 'onAfterLogin'), 10);
 		$this->subscribeEvent('Core::Logout::before', array($this, 'onBeforeLogout'));
 		$this->subscribeEvent('Core::DeleteUser::before', array($this, 'onBeforeDeleteUser'));
+
+		User::extend($this->GetName(), 	[
+			'Login'	=> array('string', '')
+		]);
 	}
 
 	protected function getClient($iTenantId = null)
@@ -327,7 +330,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		echo $sMessage;
 	}
 
-	protected function genereteUserNameForEmail($sEmail) {
+	protected function genereteUserNameForEmail($sEmail, $bUseHashInUserName = false) {
 		
 		$mResult = false;
 
@@ -337,7 +340,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 
 		if (isset($aEmailParts[0])) {
-			if ($this->useRandomNames) {
+			if ($bUseHashInUserName) {
 				$mResult = substr(str_shuffle(md5(time())), 0, 10);
 			} else {
 				$mResult = $aEmailParts[0];
@@ -358,11 +361,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		if ($oUser) {
 
-			if ($this->useRandomNames) {
+			$bUseHashInUserName = $this->getConfig('UseHashInUserName', false);
+
+			if ($bUseHashInUserName) {
 
 				$mResult = $oUser->{$this->GetName() . '::Login'};
 				if (!$mResult) {
-					$mResult = $this->genereteUserNameForEmail($oUser->PublicId);
+					$mResult = $this->genereteUserNameForEmail($oUser->PublicId, $bUseHashInUserName);
 					if ($mResult) {
 						$oUser->{$this->GetName() . '::Login'} =  $mResult;
 						$oUser->save();
