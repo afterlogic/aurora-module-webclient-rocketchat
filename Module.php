@@ -786,7 +786,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 						'username' => $sUserName
 					],
 					'headers' => $adminHeaders,
-					'http_errors' => false
+					'http_errors' => false,
+					'timeout' => 1
 				]);
 				if ($oRes->getStatusCode() === 200) {
 					$mResult = true;
