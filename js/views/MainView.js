@@ -6,6 +6,8 @@ var
 
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
+	Popups = require('%PathToCoreWebclientModule%/js/Popups.js'),
+	CreateChatUserPopup = require('modules/%ModuleName%/js/popups/CreateChatUserPopup.js'),
 
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
@@ -46,11 +48,11 @@ CMainView.prototype.setAuroraThemeToRocketChat = function (oIframe) {
 	setTimeout(_setTheme, 2000); // to be sure the theme will be applied
 };
 
-CMainView.prototype.onLoad = function () {
+CMainView.prototype.initChat = function (sAuthToken) {
 	if (this.iframeDom() && this.iframeDom().length > 0) {
 		this.iframeDom()[0].contentWindow.postMessage({
 			externalCommand: 'login-with-token',
-			token: Settings.ChatAuthToken
+			token: sAuthToken !== '' ? sAuthToken : Settings.ChatAuthToken
 		}, '*');
 
 		this.setAuroraThemeToRocketChat(this.iframeDom()[0]);
@@ -64,6 +66,33 @@ CMainView.prototype.onLoad = function () {
 				HeaderItemView.unseenCount(Types.pInt(oEvent.data.data));
 			}
 		}.bind(this));
+	}
+
+	Settings.registered(true);
+};
+
+CMainView.prototype.onLoad = function () {
+	if (Settings.registered() || Settings.AutocreateChatAccountOnFirstLogin) {
+		this.initChat();
+	}
+};
+
+CMainView.prototype.hideIframe = function () {
+	if (this.iframeDom() && this.iframeDom().length > 0) {
+		this.iframeDom()[0].style.display = "none";
+	}
+};
+
+CMainView.prototype.showIframe = function () {
+	if (this.iframeDom() && this.iframeDom().length > 0) {
+		this.iframeDom()[0].style.display = "block";
+	}
+};
+
+CMainView.prototype.onShow = function () {
+	if (!Settings.registered() && !Settings.AutocreateChatAccountOnFirstLogin) {
+		this.hideIframe();
+		Popups.showPopup(CreateChatUserPopup, [Settings.SuggestedUserName, this]);
 	}
 };
 

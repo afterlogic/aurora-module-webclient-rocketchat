@@ -1,0 +1,24 @@
+<div class="popup chat_user_create_popup" style="display: none;">
+	<div class="mask" data-bind="click: cancelPopup"></div>
+	<div class="popup_panel">
+		<span class="popup_heading" data-bind="i18n: {'key': '%MODULENAME%/HEADING_BROWSER_TAB'}"></span>
+		<div class="fields">
+			<div class="row hint">
+				<span data-bind="i18n: {'key': '%MODULENAME%/INFO_CREATE_USER'}"></span>
+			</div>
+			<div class="row">
+				<span class="label">
+					<span data-bind="i18n: {'key': '%MODULENAME%/LABEL_LOGIN'}"></span>:
+				</span>
+				<input class="value input" type="text" data-bind="value: login,valueUpdate: 'afterkeydown', onEnter: onCreateClick" />
+			</div>
+			<div class="clear"></div>
+		</div>
+		<div class="buttons">
+			<span class="button" data-bind="i18n: {'key': 'COREWEBCLIENT/ACTION_CREATE'}, click: onCreateClick, visible: !loading()"></span>
+			<span class="button" data-bind="i18n: {'key': 'COREWEBCLIENT/ACTION_CREATE_IN_PROGRESS'}, visible: loading()"></span>
+			<span class="button secondary_button" data-bind="i18n: {'key': 'COREWEBCLIENT/ACTION_CANCEL'}, click: cancelPopup, visible: !loading()"></span>
+		</div>
+	</div>
+	<span class="helper"></span>
+</div>

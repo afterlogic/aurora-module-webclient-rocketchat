@@ -11,7 +11,7 @@ module.exports = function (oAppData) {
 		Settings = require('modules/%ModuleName%/js/Settings.js'),
 		
 		WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),
-		
+
 		oOpenedWindows = [],
 		
 		HeaderItemView = null
@@ -40,6 +40,7 @@ module.exports = function (oAppData) {
 				return oScreens;
 			}
 		};
+
 		if (!App.isNewTab())
 		{
 			result.start = function (ModulesManager) {

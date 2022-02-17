@@ -22,5 +22,14 @@
 	"UseHashInUserName": [
 		false,
 		"bool"
+	],
+	"AutocreateChatAccountOnFirstLogin": [
+		false,
+		"bool"
+	],
+	"ShowRecommendationToUseChat": [
+		false,
+		"bool"
 	]
+
 }

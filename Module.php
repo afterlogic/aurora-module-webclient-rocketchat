@@ -11,6 +11,7 @@ use Aurora\Api;
 use Aurora\Modules\Contacts\Module as ContactsModule;
 use Aurora\Modules\Core\Classes\User;
 use Aurora\Modules\Core\Module as CoreModule;
+use Aurora\Modules\RocketChatWebclient\Enums\ErrorCodes;
 use Aurora\System\Enums\UserRole;
 use Aurora\System\Exceptions\ApiException;
 use Aurora\System\Utils;
@@ -51,6 +52,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected $adminAccount = null;
 
 	protected $stack = null;
+
+	protected $allowedUserNameCharacters = '';
 
 	protected function initConfig()
 	{
@@ -115,6 +118,15 @@ class Module extends \Aurora\System\Module\AbstractModule
 		User::extend($this->GetName(), 	[
 			'Login'	=> array('string', '')
 		]);
+
+		$this->aErrors = [
+			ErrorCodes::AccountNameIsReserved => $this->i18N('ACCOUNT_NAME_IS_RESERVED'),
+			ErrorCodes::AccountNameContainsInvalidCharacters => $this->i18N('ACCOUNT_NAME_CONTAINS_INVALID_CHARACTERS', 
+				[
+					'CHARS' => str_replace(['+', '[', ']'], '', $this->getAllowedUserNameCharacters()) 
+				]
+			),
+		];
 	}
 
 	protected function getClient($iTenantId = null)
@@ -145,6 +157,16 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
+	protected function getAllowedUserNameCharacters()
+	{
+		if (empty($this->allowedUserNameCharacters) && $this->client)
+		{
+			$this->allowedUserNameCharacters = $this->oRocketChatSettingsManager->getSetting('UTF8_User_Names_Validation', $this->client, $this->getAdminHeaders());
+		}
+
+		return $this->allowedUserNameCharacters;
+	}
+
 	/**
 	 * Obtains list of module settings for authenticated user.
 	 * 
@@ -153,10 +175,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public function GetSettings($TenantId = null)
 	{
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
-
-
-		// var_dump('asdasd');
-		// exit();
 
 		$sChatUrl = '';
 		$sAdminUsername = '';
@@ -187,7 +205,12 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$aChatAuthData = $this->initChat();
 				$mResult = [
 					'ChatUrl' => $sChatUrl,
-					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : ''
+					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : '',
+					'SuggestedUserName' => $this->genereteUserNameForEmail($oUser->PublicId),
+					'Registered' => $aChatAuthData && $aChatAuthData['userId'],
+					'ShowRecommendationToUseChat' => $oSettings->GetValue('ShowRecommendationToUseChat', false),
+					'AutocreateChatAccountOnFirstLogin' => $oSettings->GetValue('AutocreateChatAccountOnFirstLogin', false),
+					'AllowedUserNameCharacters' => $this->getAllowedUserNameCharacters()
 				];
 
 				return $mResult;
@@ -361,18 +384,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		if ($oUser) {
 
-			$bUseHashInUserName = $this->getConfig('UseHashInUserName', false);
-
-			if ($bUseHashInUserName) {
-
-				$mResult = $oUser->{$this->GetName() . '::Login'};
-				if (!$mResult) {
-					$mResult = $this->genereteUserNameForEmail($oUser->PublicId, $bUseHashInUserName);
-					if ($mResult) {
-						$oUser->{$this->GetName() . '::Login'} =  $mResult;
-						$oUser->save();
-					}	
-				}
+			$mResult = $oUser->{$this->GetName() . '::Login'};
+			if (!$mResult) {
+				$bUseHashInUserName = $this->getConfig('UseHashInUserName', false);
+				$mResult = $this->genereteUserNameForEmail($oUser->PublicId, $bUseHashInUserName);
+				if ($mResult) {
+					$oUser->{$this->GetName() . '::Login'} =  $mResult;
+					$oUser->save();
+				}	
 			}
 
 			if (!$mResult) {
@@ -457,6 +476,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sUserName = $this->getUserNameFromUser($oUser);
 		try {
 			if ($this->client) {
+
 				$res = $this->client->get('users.info', [
 					'query' => [
 						'username' => $sUserName
@@ -488,7 +508,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
-	protected function createUser($sEmail)
+	protected function createUser($sEmail, $sLogin = '')
 	{
 		$mResult = false;
 
@@ -499,9 +519,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 			} else {
 				$sPassword = $this->sDemoPass;
 			}
-			
 			$oUser = CoreModule::Decorator()->GetUserUnchecked($oAccount->IdUser);
-			$sLogin = $this->getUserNameFromUser($oUser);
+			if (empty($sLogin)) {
+				$sLogin = $this->getUserNameFromUser($oUser);
+			}
 
 			$sName = isset($oAccount->FriendlyName) && $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
 			try {
@@ -517,6 +538,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 				]);
 				if ($res->getStatusCode() === 200) {
 					$mResult = \json_decode($res->getBody());
+					$oUser->{$this->GetName() . '::Login'} = $sLogin;
+					$oUser->save();
 				}
 				else {
 					$mResult = \json_decode($res->getBody(), true);
@@ -532,14 +555,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
-	protected function createCurrentUser()
+	protected function createCurrentUser($sLogin = '')
 	{
 		$mResult = false;
 		
 		$oUser = Api::getAuthenticatedUser();
 
 		if ($oUser)	{
-			$mResult = $this->createUser($oUser->PublicId);
+			$mResult = $this->createUser($oUser->PublicId, $sLogin);
 		}
 
 		return $mResult;
@@ -580,6 +603,30 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 				catch (ConnectException $oException) {}
 			}
+		}
+
+		return $mResult;
+	}
+
+	protected function getAuthInfo($oData)
+	{
+		$mResult = [
+			'authToken' => '',
+			'userId' => ''
+		];
+
+		if ($oData && isset($oData->data)) {
+			$iAuthTokenCookieExpireTime = (int) \Aurora\System\Api::GetModule('Core')->getConfig('AuthTokenCookieExpireTime', 30);
+			@\setcookie('RocketChatAuthToken', Utils::EncryptValue($oData->data->authToken),
+					\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
+					null, \Aurora\System\Api::getCookieSecure());
+			@\setcookie('RocketChatUserId', $oData->data->userId,
+					\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
+					null, \Aurora\System\Api::getCookieSecure());
+			$mResult = [
+				'authToken' => $oData->data->authToken,
+				'userId' => $oData->data->userId
+			];
 		}
 
 		return $mResult;
@@ -691,37 +738,17 @@ class Module extends \Aurora\System\Module\AbstractModule
 							'userId' => $sUserId
 						];
 					}
-				}
+				} 
 				catch (ConnectException $oException) {}
 			}
 			if (!$mResult) {
-				$currentUserInfo = $this->getCurrentUserInfo();
-				if ($currentUserInfo) {
-					$mResult = $this->loginCurrentUser();
-					if (!$mResult && !$this->isDemoUser($oUser->PublicId)) {
-						if ($this->updateUserPassword($currentUserInfo)) {
-							$mResult = $this->loginCurrentUser();
-						}
-					}
-				} elseif ($this->createCurrentUser() !== false) {
-					$mResult = $this->loginCurrentUser();
+				if (isset($oUser->{$this->GetName() . '::Login'})) {
+					$oData = $this->loginCurrentUser();
+					$mResult = $this->getAuthInfo($oData);
+				} else if ($this->getConfig('AutocreateChatAccountOnFirstLogin', false)) {
+					$mResult = $this->CreateAndLoginCurrentUser();
 				}
-
-				if ($mResult && isset($mResult->data)) {
-					$iAuthTokenCookieExpireTime = (int) \Aurora\System\Api::GetModule('Core')->getConfig('AuthTokenCookieExpireTime', 30);
-					@\setcookie('RocketChatAuthToken', Utils::EncryptValue($mResult->data->authToken),
-							\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
-							null, \Aurora\System\Api::getCookieSecure());
-					@\setcookie('RocketChatUserId', $mResult->data->userId,
-							\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
-							null, \Aurora\System\Api::getCookieSecure());
-					$oUser->save();
-					$mResult = [
-						'authToken' => $mResult->data->authToken,
-						'userId' => $mResult->data->userId
-					];
-				}
-			}
+			} 
 		}
 
 		return $mResult;
@@ -770,8 +797,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function onAfterLogin(&$aArgs, &$mResult)
 	{
-		if (!$this->getCurrentUserInfo()) {
-			$this->createCurrentUser();
+		if ($this->getConfig('AutocreateChatAccountOnFirstLogin', false)) {
+			if (!$this->getCurrentUserInfo()) {
+				$this->createCurrentUser();
+			}
 		}
 	}
 
@@ -822,5 +851,47 @@ class Module extends \Aurora\System\Module\AbstractModule
 			\Aurora\System\Api::Log('Cannot delete ' . $sUserName . ' user from RocketChat. Exception is below.');
 			\Aurora\System\Api::LogException($oException);
 		}
+	}
+
+	protected function validateLogin($sLogin) {
+		if (!preg_match('/^' . $this->getAllowedUserNameCharacters() . '$/', $sLogin)) {
+			throw new ApiException(ErrorCodes::AccountNameContainsInvalidCharacters, null, '', [], $this);
+		}		
+	}
+
+	public function CreateAndLoginCurrentUser($Login = '')
+	{
+		$mResult = false;
+
+		$oUser = Api::getAuthenticatedUser();
+
+		if ($oUser) {
+			if (!empty($Login) && strpos($Login, '.')) {
+				$sUserLogin = $this->genereteUserNameForEmail($oUser->PublicId);
+				if (strtolower($Login) !== strtolower($sUserLogin)) {
+					throw new ApiException(ErrorCodes::AccountNameIsReserved, null, '', [], $this);
+				}
+			}
+
+			$this->validateLogin($Login);
+
+			$currentUserInfo = $this->getCurrentUserInfo();
+			if ($currentUserInfo) {
+				$mResult = $this->loginCurrentUser();
+				if (!$mResult && !$this->isDemoUser($oUser->PublicId)) {
+					if ($this->updateUserPassword($currentUserInfo)) {
+						$mResult = $this->loginCurrentUser();
+					}
+				}
+			} elseif ($this->createCurrentUser($Login) !== false) {
+				$oUser->{$this->GetName() . '::Login'} = $Login;
+				$oUser->save();
+				$mResult = $this->loginCurrentUser();
+			}
+
+			$mResult = $this->getAuthInfo($mResult);
+		}
+
+		return $mResult;
 	}
 }

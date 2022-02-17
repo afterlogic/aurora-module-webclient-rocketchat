@@ -122,7 +122,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 		return false;
 	}
 
-	private function getSetting($sName, $oClient, $aAdminHeaders)
+	public function getSetting($sName, $oClient, $aAdminHeaders)
 	{
 		try {
 			$res = $oClient->get('settings/' . $sName, [

@@ -10,7 +10,10 @@ var
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	
 	Settings = require('modules/%ModuleName%/js/Settings.js'),
-	UserSettings = require('%PathToCoreWebclientModule%/js/Settings.js')	
+	UserSettings = require('%PathToCoreWebclientModule%/js/Settings.js'),
+	Popups = require('%PathToCoreWebclientModule%/js/Popups.js'),
+	CreateChatUserPopup = require('modules/%ModuleName%/js/popups/CreateChatUserPopup.js'),
+	MainView = require('modules/%ModuleName%/js/views/MainView.js')
 ;
 
 /**
@@ -33,12 +36,20 @@ function CRocketChatSettingsPaneView()
 	// }, this);
 
 	this.credentialsHintText = App.mobileCredentialsHintText;
+
+	this.registered = ko.computed(function () {
+		return Settings.registered() || Settings.AutocreateChatAccountOnFirstLogin;
+	});
 }
 
 CRocketChatSettingsPaneView.prototype.getLoginForCurrentUser = function () {
 	Ajax.send('GetLoginForCurrentUser', {}, function(oResponse) {
 		this.sLogin(oResponse.Result);
 	}, this);
+}
+
+CRocketChatSettingsPaneView.prototype.createUser = function () {
+	Popups.showPopup(CreateChatUserPopup, [Settings.SuggestedUserName, MainView]);
 }
 
 /**
