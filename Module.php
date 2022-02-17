@@ -828,7 +828,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 				if ($oAuthenticatedUser->Role === UserRole::TenantAdmin && $oUser->IdTenant === $oAuthenticatedUser->IdTenant) {
 					\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
-				} else if ($oAuthenticatedUser->Role === UserRole::TenantAdmin){
+				} else if ($oAuthenticatedUser->Role === UserRole::SuperAdmin){
 					\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 				}
 
