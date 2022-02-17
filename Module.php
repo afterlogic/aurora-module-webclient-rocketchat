@@ -770,9 +770,15 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$client = $this->client;
 			$adminHeaders = $this->getAdminHeaders();
 		} else {
-			\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 			$oUser = Api::getUserById((int) $aArgs['UserId']);
 			if ($oUser) {
+
+				if ($oAuthenticatedUser->Role === UserRole::TenantAdmin && $oUser->IdTenant === $oAuthenticatedUser->IdTenant) {
+					\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
+				} else if ($oAuthenticatedUser->Role === UserRole::SuperAdmin){
+					\Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
+				}
+
 				$client = $this->getClient($oUser->IdTenant);
 				$adminHeaders = $this->getAdminHeaders($oUser->IdTenant);
 			}
