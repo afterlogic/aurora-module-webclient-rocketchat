@@ -471,7 +471,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$sName = isset($oAccount->FriendlyName) && $oAccount->FriendlyName !== '' ? $oAccount->FriendlyName : $sLogin; 
 			try {
 				$res = $this->client->post('users.create', [
-					'form_params' => [
+					'json' => [
 						'email' => $sEmail, 
 						'name' => $sName, 
 						'password' => $sPassword, 
@@ -578,7 +578,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		if ($this->client) {
 			$this->client->post('users.setPreferences', [
-				'form_params' => [
+				'json' => [
 					'userId' => $sUserId, 
 					'data' => [
 						"language" => $sLang
@@ -602,7 +602,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			if ($oAccount && $this->client) {
 				Api::AddSecret($oAccount->getPassword());
 				$res = $this->client->post('users.update', [
-					'form_params' => [
+					'json' => [
 						'userId' => $userInfo->user->_id, 
 						'data' => [
 							'password' => $oAccount->getPassword()
@@ -788,7 +788,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		try {
 			if ($client) {
 				$oRes = $client->post('users.delete', [
-					'form_params' => [
+					'json' => [
 						'username' => $sUserName
 					],
 					'headers' => $adminHeaders,
