@@ -42,6 +42,11 @@ module.exports = function (oAppData) {
 		};
 		if (!App.isNewTab())
 		{
+			App.subscribeEvent('CalendarWebclient::RegisterEditEventController', function ({register, view}) {
+				const controller = require('modules/%ModuleName%/js/views/AddMeetingLinkToEventView.js');
+				controller.init(view);
+				register(controller, 'AdditionalButton');
+			});
 			result.start = function (ModulesManager) {
 				// init screen so the module could interact with chat in iframe
 				var Screens = require('%PathToCoreWebclientModule%/js/Screens.js');

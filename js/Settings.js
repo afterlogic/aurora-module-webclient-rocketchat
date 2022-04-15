@@ -12,8 +12,9 @@ module.exports = {
 
 	ChatUrl: '',
 	ChatAuthToken: '',
-	UnreadCounterIntervalInSeconds: 15,
-	
+	AllowAddMeetingLinkToEvent: false,
+	MeetingLinkUrl: '',
+
 	/**
 	 * Initializes settings from AppData object sections.
 	 * 
@@ -27,7 +28,8 @@ module.exports = {
 		{
 			this.ChatUrl = Types.pString(oAppDataSection.ChatUrl);
 			this.ChatAuthToken = Types.pString(oAppDataSection.ChatAuthToken);
-			this.UnreadCounterIntervalInSeconds = Types.pInt(oAppDataSection.UnreadCounterIntervalInSeconds, this.UnreadCounterIntervalInSeconds);
+			this.AllowAddMeetingLinkToEvent = Types.pBool(oAppDataSection.AllowAddMeetingLinkToEvent);
+			this.MeetingLinkUrl = Types.pString(oAppDataSection.MeetingLinkUrl);
 		}
 	}
 };

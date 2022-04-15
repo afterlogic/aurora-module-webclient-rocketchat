@@ -15,12 +15,16 @@
 		"",
 		"string"
 	],
-	"UnreadCounterIntervalInSeconds": [
-		15,
-		"int"
-	],
 	"EnableLogging": [
 		false,
 		"bool"
+	],
+	"AllowAddMeetingLinkToEvent": [
+		false,
+		"bool"
+	],
+	"MeetingLinkUrl": [
+		"",
+		"string"
 	]
 }

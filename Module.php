@@ -185,7 +185,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$aChatAuthData = $this->initChat();
 				$mResult = [
 					'ChatUrl' => $sChatUrl,
-					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : ''
+					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : '',
+					'AllowAddMeetingLinkToEvent' => $this->getConfig('AllowAddMeetingLinkToEvent', false),
+					'MeetingLinkUrl' => $this->getConfig('MeetingLinkUrl', '')
 				];
 
 				return $mResult;
