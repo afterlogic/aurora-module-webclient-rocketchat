@@ -1,58 +1,58 @@
 {
-  "Disabled": [
-    false,
-    "bool"
-  ],
-  "Disabled_Description": [
-    "",
-    "string"
-  ],
-  "ChatUrl": [
-    "",
-    "string"
-  ],
-  "ChatUrl_Description": [
-    "",
-    "string"
-  ],
-  "AdminUsername": [
-    "",
-    "string"
-  ],
-  "AdminUsername_Description": [
-    "",
-    "string"
-  ],
-  "AdminPassword": [
-    "",
-    "string"
-  ],
-  "AdminPassword_Description": [
-    "",
-    "string"
-  ],
-  "EnableLogging": [
-    false,
-    "bool"
-  ],
-  "EnableLogging_Description": [
-    "",
-    "string"
-  ],
-  "AllowAddMeetingLinkToEvent": [
-    false,
-    "bool"
-  ],
-  "AllowAddMeetingLinkToEvent_Description": [
-    "",
-    "string"
-  ],
-  "MeetingLinkUrl": [
-    "",
-    "string"
-  ],
-  "MeetingLinkUrl_Description": [
-    "",
-    "string"
-  ]
+	"Disabled": [
+		false,
+		"bool"
+	],
+	"Disabled_Description": [
+		"",
+		"string"
+	],
+	"ChatUrl": [
+		"",
+		"string"
+	],
+	"ChatUrl_Description": [
+		"",
+		"string"
+	],
+	"AdminUsername": [
+		"",
+		"string"
+	],
+	"AdminUsername_Description": [
+		"",
+		"string"
+	],
+	"AdminPassword": [
+		"",
+		"string"
+	],
+	"AdminPassword_Description": [
+		"",
+		"string"
+	],
+	"EnableLogging": [
+		false,
+		"bool"
+	],
+	"EnableLogging_Description": [
+		"",
+		"string"
+	],
+	"AllowAddMeetingLinkToEvent": [
+		false,
+		"bool"
+	],
+	"AllowAddMeetingLinkToEvent_Description": [
+		"",
+		"string"
+	],
+	"MeetingLinkUrl": [
+		"",
+		"string"
+	],
+	"MeetingLinkUrl_Description": [
+		"",
+		"string"
+	]
 }
