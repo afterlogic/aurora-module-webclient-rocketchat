@@ -1,8 +1,14 @@
-/*RocketChat Hot fixes*/
+/* RocketChat Hot fixes */
 svg.rc-message-box__action {
   position: static;
 }
+.rcx-button-group.rcx-button-group--medium>.rcx-box>.rcx-button-group__item {
+  margin-inline: 0.25rem;
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
+}
 
+/* Aurora themes */
 body, .rc-old.full-page {
   background: transparent;
 }
@@ -135,8 +141,9 @@ body, .rc-old.full-page {
 .aurora-theme-Default .rcx-sidebar {
   border-radius: 5px;
 }
-.aurora-theme-Default .main-content {   border-radius: 5px;
-  box-shadow: -1px 0 2px rgb(0 0 0 / 11%);
+.aurora-theme-Default .main-content {
+  border-radius: 5px;
+  box-shadow: -1px 0 2px rgba(0, 0, 0, 0.11);
 }
 .aurora-theme-Default .main-content > section {
   border-radius: 5px;
@@ -259,7 +266,7 @@ body, .rc-old.full-page {
 }
 .aurora-theme-Sand .main-content {
   border-radius: 5px;
-  box-shadow: -1px 0 2px rgb(0 0 0 / 11%);
+  box-shadow: -1px 0 2px rgba(0, 0, 0, 0.11);
 }
 .aurora-theme-Sand .main-content > section {
   border-radius: 5px;
