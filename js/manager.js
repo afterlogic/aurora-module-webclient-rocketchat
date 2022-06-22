@@ -11,6 +11,8 @@ module.exports = function (oAppData) {
 		Settings = require('modules/%ModuleName%/js/Settings.js'),
 		
 		WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),
+
+		Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 		
 		oOpenedWindows = [],
 		

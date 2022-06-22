@@ -3,7 +3,8 @@
 var
 	_ = require('underscore'),
 	
-	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js')
+	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
+	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js')
 ;
 
 module.exports = {
@@ -27,9 +28,16 @@ module.exports = {
 		if (!_.isEmpty(oAppDataSection))
 		{
 			this.ChatUrl = Types.pString(oAppDataSection.ChatUrl);
-			this.ChatAuthToken = Types.pString(oAppDataSection.ChatAuthToken);
 			this.AllowAddMeetingLinkToEvent = Types.pBool(oAppDataSection.AllowAddMeetingLinkToEvent);
 			this.MeetingLinkUrl = Types.pString(oAppDataSection.MeetingLinkUrl);
 		}
+
+		Ajax.send(this.ServerModuleName,'InitChat', {}, function(oResponse) {
+			if(oResponse.Result) {
+				this.ChatAuthToken = oResponse.Result['authToken'];
+			} else {
+				this.ChatAuthToken = '';
+			}
+		}, this);
 	}
 };

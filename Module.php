@@ -50,6 +50,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	protected $stack = null;
 
+	protected $curUserData = false;
+
 	protected function initConfig()
 	{
 		$oSettings = $this->GetModuleSettings();
@@ -182,10 +184,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 		{
 			if ($oUser->isNormalOrTenant())
 			{
-				$aChatAuthData = $this->initChat();
 				$mResult = [
 					'ChatUrl' => $sChatUrl,
-					'ChatAuthToken' => $aChatAuthData ? $aChatAuthData['authToken'] : '',
 					'AllowAddMeetingLinkToEvent' => $this->getConfig('AllowAddMeetingLinkToEvent', false),
 					'MeetingLinkUrl' => $this->getConfig('MeetingLinkUrl', '')
 				];
@@ -280,6 +280,18 @@ class Module extends \Aurora\System\Module\AbstractModule
 		);
 	}
 
+	protected function initUser()
+	{
+		$mResult = true;
+		if (!$this->getCurrentUserInfo()) {
+			if (!$this->createCurrentUser()) {
+				$mResult = false;
+			}
+		}
+
+		return $mResult;
+	}
+
 	public function EntryChatDirect()
 	{
 		try {
@@ -314,7 +326,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	protected function showChat($sUrl = '', $sIntegratorLinks = '')
 	{
-		$aUser = $this->initChat();
+		$aUser = $this->InitChat();
 		$sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
 		if (\is_string($sResult)) {
 			echo strtr($sResult, [
@@ -620,75 +632,82 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
-	protected function initChat()
+	public function InitChat()
 	{
-		$mResult = false;
-		$oUser = Api::getAuthenticatedUser();
-		if ($oUser && $this->client) {
-			$sAuthToken = isset($_COOKIE['RocketChatAuthToken']) ? $_COOKIE['RocketChatAuthToken'] : null;
-			$sUserId = isset($_COOKIE['RocketChatUserId']) ? $_COOKIE['RocketChatUserId'] : null;
-			if ($sAuthToken !== null && $sUserId !== null) {
-				$sAuthToken = Utils::DecryptValue($sAuthToken);
-				Api::AddSecret($sAuthToken);
-				try
-				{
-					$res = $this->client->get('me', [
-						'headers' => [
-							"X-Auth-Token" => $sAuthToken, 
-							"X-User-Id" => $sUserId,
-						],
-						'http_errors' => false
-					]);
-					if ($res->getStatusCode() === 200) {
-						$body = \json_decode($res->getBody(), true);
-						$sLang = '';
-						if (isset($body->settings->preferences->language)) {
-							$sLang = $body->settings->preferences->language;
-						}
-						$sUserLang = Utils::ConvertLanguageNameToShort($oUser->Language);
-						if ($sUserLang !== $sLang) {
-							$this->updateLanguage($sUserId, $sAuthToken, $sUserLang);
-						}
+		if (!$this->curUserData) {
 
+			$mResult = false;
+			$oUser = Api::getAuthenticatedUser();
+			if ($oUser && $this->client && $this->initUser()) {
+				
+				$sAuthToken = isset($_COOKIE['RocketChatAuthToken']) ? $_COOKIE['RocketChatAuthToken'] : null;
+				$sUserId = isset($_COOKIE['RocketChatUserId']) ? $_COOKIE['RocketChatUserId'] : null;
+				if ($sAuthToken !== null && $sUserId !== null) {
+					$sAuthToken = Utils::DecryptValue($sAuthToken);
+					Api::AddSecret($sAuthToken);
+					try
+					{
+						$res = $this->client->get('me', [
+							'headers' => [
+								"X-Auth-Token" => $sAuthToken, 
+								"X-User-Id" => $sUserId,
+							],
+							'http_errors' => false
+						]);
+						if ($res->getStatusCode() === 200) {
+							$body = \json_decode($res->getBody(), true);
+							$sLang = '';
+							if (isset($body->settings->preferences->language)) {
+								$sLang = $body->settings->preferences->language;
+							}
+							$sUserLang = Utils::ConvertLanguageNameToShort($oUser->Language);
+							if ($sUserLang !== $sLang) {
+								$this->updateLanguage($sUserId, $sAuthToken, $sUserLang);
+							}
+
+							$mResult = [
+								'authToken' => $sAuthToken,
+								'userId' => $sUserId
+							];
+						}
+					}
+					catch (ConnectException $oException) {}
+				}
+
+				if (!$mResult) {
+					$currentUserInfo = $this->getCurrentUserInfo();
+					if ($currentUserInfo) {
+						$mResult = $this->loginCurrentUser();
+						if (!$mResult && !$this->isDemoUser($oUser->PublicId)) {
+							if ($this->updateUserPassword($currentUserInfo)) {
+								$mResult = $this->loginCurrentUser();
+							}
+						}
+					} elseif ($this->createCurrentUser() !== false) {
+						$mResult = $this->loginCurrentUser();
+					}
+
+					if ($mResult && isset($mResult->data)) {
+						$iAuthTokenCookieExpireTime = (int) \Aurora\System\Api::GetModule('Core')->getConfig('AuthTokenCookieExpireTime', 30);
+						@\setcookie('RocketChatAuthToken', Utils::EncryptValue($mResult->data->authToken),
+								\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
+								null, \Aurora\System\Api::getCookieSecure());
+						@\setcookie('RocketChatUserId', $mResult->data->userId,
+								\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
+								null, \Aurora\System\Api::getCookieSecure());
+						$oUser->save();
 						$mResult = [
-							'authToken' => $sAuthToken,
-							'userId' => $sUserId
+							'authToken' => $mResult->data->authToken,
+							'userId' => $mResult->data->userId
 						];
 					}
 				}
-				catch (ConnectException $oException) {}
 			}
-			if (!$mResult) {
-				$currentUserInfo = $this->getCurrentUserInfo();
-				if ($currentUserInfo) {
-					$mResult = $this->loginCurrentUser();
-					if (!$mResult && !$this->isDemoUser($oUser->PublicId)) {
-						if ($this->updateUserPassword($currentUserInfo)) {
-							$mResult = $this->loginCurrentUser();
-						}
-					}
-				} elseif ($this->createCurrentUser() !== false) {
-					$mResult = $this->loginCurrentUser();
-				}
 
-				if ($mResult && isset($mResult->data)) {
-					$iAuthTokenCookieExpireTime = (int) \Aurora\System\Api::GetModule('Core')->getConfig('AuthTokenCookieExpireTime', 30);
-					@\setcookie('RocketChatAuthToken', Utils::EncryptValue($mResult->data->authToken),
-							\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
-							null, \Aurora\System\Api::getCookieSecure());
-					@\setcookie('RocketChatUserId', $mResult->data->userId,
-							\strtotime('+' . $iAuthTokenCookieExpireTime . ' days'), \Aurora\System\Api::getCookiePath(),
-							null, \Aurora\System\Api::getCookieSecure());
-					$oUser->save();
-					$mResult = [
-						'authToken' => $mResult->data->authToken,
-						'userId' => $mResult->data->userId
-					];
-				}
-			}
+			$this->curUserData = $mResult;
 		}
 
-		return $mResult;
+		return $this->curUserData;
 	}
 
 	public function GetLoginForCurrentUser()
@@ -720,7 +739,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public function GetUnreadCounter()
 	{
 		$mResult = 0;
-		$aCurUser = $this->initChat();
+		$aCurUser = $this->InitChat();
 		if ($aCurUser && $this->client) {
 			try
 			{
@@ -748,9 +767,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 	public function onAfterLogin(&$aArgs, &$mResult)
 	{
-		if (!$this->getCurrentUserInfo()) {
-			$this->createCurrentUser();
-		}
+		// code moved to the InitUser method
+
+		// if (!$this->getCurrentUserInfo()) {
+		// 	$this->createCurrentUser();
+		// }
 	}
 
 	public function onBeforeLogout(&$aArgs, &$mResult)
