@@ -4,7 +4,7 @@
 		"bool"
 	],
 	"Disabled_Description": [
-		"",
+		"Setting to true disables the module",
 		"string"
 	],
 	"ChatUrl": [
@@ -12,7 +12,7 @@
 		"string"
 	],
 	"ChatUrl_Description": [
-		"",
+		"RocketChat installation URL",
 		"string"
 	],
 	"AdminUsername": [
@@ -20,7 +20,7 @@
 		"string"
 	],
 	"AdminUsername_Description": [
-		"",
+		"Username of RocketChat admin account",
 		"string"
 	],
 	"AdminPassword": [
@@ -28,7 +28,7 @@
 		"string"
 	],
 	"AdminPassword_Description": [
-		"",
+		"Password of RocketChat admin account",
 		"string"
 	],
 	"EnableLogging": [
@@ -36,7 +36,7 @@
 		"bool"
 	],
 	"EnableLogging_Description": [
-		"",
+		"Enables logging of API calls and responses to a separate logfile for troubleshooting purposes",
 		"string"
 	],
 	"AllowAddMeetingLinkToEvent": [
