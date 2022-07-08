@@ -418,7 +418,9 @@ body, .rc-old.full-page {
 }
 .aurora-theme-DefaultDark .main-content > section {
   background: #13121C;
-  border-radius: 5px;
+  border: solid 1px #21262b;
+  border-radius: 5px 0 0 0;
+  border-width: 1px 0 0 1px;
   color: #E4E4E4;
 }
 .aurora-theme-DefaultDark .main-content > section .rcx-box--full {
