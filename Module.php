@@ -34,10 +34,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public $oRocketChatSettingsManager = null;
 	
 	protected $sChatUrl= "";
-	
-	protected $sAdminUser = "";
-	
-	protected $sAdminPass = "";
 
 	protected $sDemoPass = "demo";
 	
@@ -56,11 +52,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		$oSettings = $this->GetModuleSettings();
 		$this->sChatUrl = $oSettings->GetValue('ChatUrl', '');		
-		$this->sAdminUser = $oSettings->GetValue('AdminUsername', '');
-		$this->sAdminPass = $oSettings->GetValue('AdminPassword', '');
-		Api::AddSecret($this->sAdminPass );
+		$sAdminUser = $oSettings->GetValue('AdminUsername', '');
 
-		if (!empty($this->sChatUrl) && !empty($this->sAdminUser)) {
+		if (!empty($this->sChatUrl) && !empty($sAdminUser)) {
 			$this->client = new Client([
 				'base_uri' => \rtrim($this->sChatUrl, '/') . '/api/v1/',
 				'verify' => false,
@@ -361,23 +355,62 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $mResult;
 	}
 
-	protected function getAdminCredentials($TenantId = null)
+	protected function getAdminCredentials($TenantId = null, $EncrypdedPassword = true)
 	{
 		$mResult = false;
+
+		$oSettings = $this->GetModuleSettings();
 		if (isset($TenantId)) {
-			$oSettings = $this->GetModuleSettings();
 			$oTenant = Api::getTenantById($TenantId);
 			if ($oTenant) {
 				$mResult['AdminUser'] = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', '');
 				$mResult['AdminPass'] = $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword', '');
+				Api::AddSecret($mResult['AdminPass']);
+				if ($EncrypdedPassword) {
+					$mResult['AdminPass'] = Utils::DecryptValue($mResult['AdminPass']);
+				} else {
+					$oSettings->SetTenantValue($oTenant->Name, 'AdminPassword', Utils::EncryptValue($mResult['AdminPass']));
+					$oSettings->SaveTenantSettings($oTenant->Name);
+				}
 			}
 		} else {
-			$mResult['AdminUser'] = $this->sAdminUser;
-			$mResult['AdminPass'] = $this->sAdminPass;
+			$mResult['AdminUser'] = $oSettings->GetValue('AdminUsername', '');
+			$mResult['AdminPass'] = $oSettings->GetValue('AdminPassword', '');
+			Api::AddSecret($mResult['AdminPass']);
+			if ($EncrypdedPassword) {
+				$mResult['AdminPass'] = Utils::DecryptValue($mResult['AdminPass']);
+			} else {
+				$oSettings->SetValue('AdminPassword', Utils::EncryptValue($mResult['AdminPass']));
+				$oSettings->Save();
+			}
 		}
 		if (isset($mResult['AdminPass'])) {
 			Api::AddSecret($mResult['AdminPass']);
 		}
+
+		return $mResult;
+	}
+
+	protected function loginAdminAccount($TenantId, $aAdminCreds)
+	{
+		$mResult = false;
+
+		$client = $this->getClient($TenantId);
+		try {
+			if ($client && $aAdminCreds) {
+				$res = $client->post('login', [
+					'form_params' => [
+						'user' => $aAdminCreds['AdminUser'], 
+						'password' => $aAdminCreds['AdminPass']
+					],
+					'http_errors' => false
+				]);
+				if ($res->getStatusCode() === 200) {
+					$mResult = \json_decode($res->getBody());
+				}		
+			}
+		}
+		catch (ConnectException $oException) {}
 
 		return $mResult;
 	}
@@ -391,25 +424,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 
 		$aAdminCreds = $this->getAdminCredentials($TenantId);
-		$client = $this->getClient($TenantId);
-		try {
-			if ($client && $aAdminCreds) {
-				$res = $client->post('login', [
-					'form_params' => [
-						'user' => $aAdminCreds['AdminUser'], 
-						'password' => $aAdminCreds['AdminPass']
-					],
-					'http_errors' => false
-				]);
-				if ($res->getStatusCode() === 200) {
-					$mResult = \json_decode($res->getBody());
-					if (!isset($TenantId)) {
-						$this->adminAccount = $mResult;
-					}
-				}		
-			}
+		$mResult = $this->loginAdminAccount($TenantId, $aAdminCreds);
+		if (!$mResult) {
+			$aAdminCreds = $this->getAdminCredentials($TenantId, false);
+			$mResult = $this->loginAdminAccount($TenantId, $aAdminCreds);			
 		}
-		catch (ConnectException $oException) {}
+		if (!isset($TenantId)) {
+			$this->adminAccount = $mResult;
+		}
 
 		return $mResult;
 	}
