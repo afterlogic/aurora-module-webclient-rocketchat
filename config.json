@@ -44,7 +44,7 @@
 		"bool"
 	],
 	"AllowAddMeetingLinkToEvent_Description": [
-		"",
+		"Allows for adding Jitsi Meet link when editing an event in calendar",
 		"string"
 	],
 	"MeetingLinkUrl": [
@@ -52,7 +52,7 @@
 		"string"
 	],
 	"MeetingLinkUrl_Description": [
-		"",
+		"Jitsi Meet link base URL",
 		"string"
 	]
 }
