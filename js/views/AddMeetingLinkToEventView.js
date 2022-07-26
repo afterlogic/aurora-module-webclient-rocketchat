@@ -28,6 +28,8 @@ CAddMeetingLinkToEventView.prototype.ViewTemplate = '%ModuleName%_AddMeetingLink
 
 CAddMeetingLinkToEventView.prototype.init = function (view)
 {
+	this.isEditable = view.descriptionView.isEditable;
+
 	this.descriptionDom = view.descriptionView.dataDom;
 	this.descriptionHtml = view.descriptionView.dataHtml;
 	this.descriptionFocus = view.descriptionView.dataFocus;

@@ -1,5 +1,5 @@
 <span class="item meeting"  data-bind="
-		visible: allowAddMeetingLink,
+		visible: allowAddMeetingLink && isEditable(),
 		customTooltip: '%MODULENAME%/LABEL_ADD_MEETING_LINK',
 		click: addMeetingLink">
 	<span class="icon"></span>
