@@ -1,4 +1,5 @@
 import settings from './settings'
+import store from 'src/store'
 
 import RocketChatAdminSettingsPerTenant from './components/RocketChatAdminSettingsPerTenant'
 
@@ -24,17 +25,22 @@ export default {
   },
 
   getAdminTenantTabs () {
-    return [
-      {
-        tabName: 'chat',
-        tabTitle: 'ROCKETCHATWEBCLIENT.ADMIN_SETTINGS_TAB_LABEL',
-        tabRouteChildren: [
-          { path: 'id/:id/chat', component: RocketChatAdminSettingsPerTenant },
-          { path: 'search/:search/id/:id/chat', component: RocketChatAdminSettingsPerTenant },
-          { path: 'page/:page/id/:id/chat', component: RocketChatAdminSettingsPerTenant },
-          { path: 'search/:search/page/:page/id/:id/chat', component: RocketChatAdminSettingsPerTenant },
-        ],
-      }
-    ]
+    const isUserSuperAdmin = store.getters['user/isUserSuperAdmin']
+    if (isUserSuperAdmin) {
+      return [
+        {
+          tabName: 'chat',
+          tabTitle: 'ROCKETCHATWEBCLIENT.ADMIN_SETTINGS_TAB_LABEL',
+          tabRouteChildren: [
+            { path: 'id/:id/chat', component: RocketChatAdminSettingsPerTenant },
+            { path: 'search/:search/id/:id/chat', component: RocketChatAdminSettingsPerTenant },
+            { path: 'page/:page/id/:id/chat', component: RocketChatAdminSettingsPerTenant },
+            { path: 'search/:search/page/:page/id/:id/chat', component: RocketChatAdminSettingsPerTenant },
+          ],
+        }
+      ]
+    } else {
+      return []
+    }
   },
 }
