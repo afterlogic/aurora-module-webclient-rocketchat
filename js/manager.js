@@ -12,7 +12,7 @@ module.exports = function (oAppData) {
 		
 		WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),
 
-		Ajax = require('modules/%ModuleName%/js/Ajax.js'),
+		// Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 		
 		oOpenedWindows = [],
 		
