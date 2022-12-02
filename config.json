@@ -54,5 +54,13 @@
 	"MeetingLinkUrl_Description": [
 		"Jitsi Meet link base URL",
 		"string"
+	],
+	"ChatUsernameFormat": [
+		1,
+		"int"
+	],
+	"ChatUsernameFormat_Description": [
+		"Defines how chat username is generated from email address: 0 - username, 1 - username.domain (without TLD), 2 - username.domain.tld",
+		"string"
 	]
 }
