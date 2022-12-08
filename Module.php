@@ -339,9 +339,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected function getUserNameFromEmail($sEmail)
 	{
 		$mResult = false;
-		
-		$oSettings = $this->GetModuleSettings();
-		$iChatUsernameFormat = $oSettings->GetValue('ChatUsernameFormat', 1);
 
 		$aEmailParts = explode("@", $sEmail); 
 		if (isset($aEmailParts[1])) {
@@ -350,17 +347,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		if (isset($aEmailParts[0])) {
 			$mResult = $aEmailParts[0];
-			if (isset($aDomainParts[0]) && ($iChatUsernameFormat == \Aurora\Modules\RocketChatWebclient\Enums\UsernameFormat::UsernameAndDomain)) {
+			if (isset($aDomainParts[0])) {
 				$mResult .= ".". $aDomainParts[0];
-			}
-			if (isset($aEmailParts[1]) && ($iChatUsernameFormat == \Aurora\Modules\RocketChatWebclient\Enums\UsernameFormat::UsernameAndFullDomainName)) {
-				$mResult .= ".". $aEmailParts[1];
 			}
 		}
 		
 		return $mResult;
 	}
-	
+
 	protected function getAdminCredentials($TenantId = null, $EncrypdedPassword = true)
 	{
 		$mResult = false;
@@ -369,6 +363,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if (isset($TenantId)) {
 			$oTenant = Api::getTenantById($TenantId);
 			if ($oTenant) {
+				$mResult = [];
 				$mResult['AdminUser'] = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', '');
 				$mResult['AdminPass'] = $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword', '');
 				Api::AddSecret($mResult['AdminPass']);
@@ -380,6 +375,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				}
 			}
 		} else {
+			$mResult = [];
 			$mResult['AdminUser'] = $oSettings->GetValue('AdminUsername', '');
 			$mResult['AdminPass'] = $oSettings->GetValue('AdminPassword', '');
 			Api::AddSecret($mResult['AdminPass']);
@@ -390,7 +386,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$oSettings->Save();
 			}
 		}
-		if (isset($mResult['AdminPass'])) {
+		if (is_array($mResult) && isset($mResult['AdminPass'])) {
 			Api::AddSecret($mResult['AdminPass']);
 		}
 
