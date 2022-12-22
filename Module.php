@@ -215,7 +215,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				$oSettings->SetTenantValue($oTenant->Name, 'ChatUrl', $ChatUrl);		
 				$oSettings->SetTenantValue($oTenant->Name, 'AdminUsername', $AdminUsername);
 				if (isset($AdminPassword)) {
-					$oSettings->SetTenantValue($oTenant->Name, 'AdminPassword', $AdminPassword);
+					$oSettings->SetTenantValue($oTenant->Name, 'AdminPassword', Utils::EncryptValue($AdminPassword));
 				}
 		
 				return $oSettings->SaveTenantSettings($oTenant->Name);
@@ -227,7 +227,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$oSettings->SetValue('ChatUrl', $ChatUrl);		
 			$oSettings->SetValue('AdminUsername', $AdminUsername);
 			if (isset($AdminPassword)) {
-				$oSettings->SetValue('AdminPassword', $AdminPassword);
+				$oSettings->SetValue('AdminPassword', Utils::EncryptValue($AdminPassword));
 			}
 
 			return $oSettings->Save();
