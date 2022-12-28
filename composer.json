@@ -6,6 +6,9 @@
 		"afterlogic/aurora-framework": "~0.10.0",
 		"monolog/monolog": "^2.3"
 	},
+	"autoload": {
+		"classmap": ["/"]
+	},
 	"extra": {
 		"installer-name": "RocketChatWebclient"
 	}
