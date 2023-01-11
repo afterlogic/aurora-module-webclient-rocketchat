@@ -232,6 +232,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 			return $oSettings->Save();
 		}
+
+		return false;
 	}
 
 	public function GetRocketChatSettings($TenantId = null)
