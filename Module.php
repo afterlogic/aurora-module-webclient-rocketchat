@@ -66,7 +66,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected function isDemoUser($sEmail)
 	{
 		$oDemoModePlugin = Api::GetModule('DemoModePlugin');
-		return $oDemoModePlugin instanceof \Aurora\Modules\DemoModePlugin\Module && $oDemoModePlugin->CheckDemoUser($sEmail);
+		return !empty($oDemoModePlugin) && $oDemoModePlugin->CheckDemoUser($sEmail);
 	}
 
 	protected function initLogging()
