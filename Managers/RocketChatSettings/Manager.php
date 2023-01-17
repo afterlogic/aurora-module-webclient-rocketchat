@@ -35,6 +35,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 		return [
 			// configs
 			'Accounts_PasswordReset' => $this->getSetting('Accounts_PasswordReset', $oClient, $aAdminHeaders),
+			'Accounts_RegistrationForm' => $this->getSetting('Accounts_RegistrationForm', $oClient, $aAdminHeaders),
 			'Iframe_Restrict_Access' => $this->getSetting('Iframe_Restrict_Access', $oClient, $aAdminHeaders),
 			'Iframe_Integration_send_enable' => $this->getSetting('Iframe_Integration_send_enable', $oClient, $aAdminHeaders),
 			'Iframe_Integration_receive_enable' => $this->getSetting('Iframe_Integration_receive_enable', $oClient, $aAdminHeaders),
@@ -53,8 +54,9 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 	public function setConfigs($oClient, $aAdminHeaders)
 	{
 		$bResult = true;
-		
+
 		$bResult = $bResult && $this->setSetting('Accounts_PasswordReset', false, $oClient, $aAdminHeaders);
+		$bResult = $bResult && $this->setSetting('Accounts_RegistrationForm', 'Disabled', $oClient, $aAdminHeaders);
 		$bResult = $bResult && $this->setSetting('Iframe_Restrict_Access', false, $oClient, $aAdminHeaders);
 		$bResult = $bResult && $this->setSetting('Iframe_Integration_send_enable', true, $oClient, $aAdminHeaders);
 		$bResult = $bResult && $this->setSetting('Iframe_Integration_receive_enable', true, $oClient, $aAdminHeaders);
