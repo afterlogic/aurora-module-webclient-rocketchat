@@ -341,6 +341,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 	protected function getUserNameFromEmail($sEmail)
 	{
 		$mResult = false;
+		
+		$oSettings = $this->GetModuleSettings();
+		$iChatUsernameFormat = $oSettings->GetValue('ChatUsernameFormat', 1);
 
 		$aEmailParts = explode("@", $sEmail); 
 		if (isset($aEmailParts[1])) {
@@ -349,8 +352,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		if (isset($aEmailParts[0])) {
 			$mResult = $aEmailParts[0];
-			if (isset($aDomainParts[0])) {
+			if (isset($aDomainParts[0]) && ($iChatUsernameFormat == \Aurora\Modules\RocketChatWebclient\Enums\UsernameFormat::UsernameAndDomain)) {
 				$mResult .= ".". $aDomainParts[0];
+			}
+			if (isset($aEmailParts[1]) && ($iChatUsernameFormat == \Aurora\Modules\RocketChatWebclient\Enums\UsernameFormat::UsernameAndFullDomainName)) {
+				$mResult .= ".". $aEmailParts[1];
 			}
 		}
 		
