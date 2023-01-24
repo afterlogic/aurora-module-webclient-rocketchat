@@ -127,16 +127,18 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 	private function getSetting($sName, $oClient, $aAdminHeaders)
 	{
 		try {
-			$res = $oClient->get('settings/' . $sName, [
-				'headers' => $aAdminHeaders,
-				'http_errors' => false
-			]);
-			$aBody = \json_decode($res->getBody(), true);
-			if ($res->getStatusCode() === 200 && $aBody['success'] === true && isset($aBody['_id']) && $aBody['_id'] === $sName) {
-				return $aBody['value'];
-			} else {
-				\Aurora\System\Api::Log('Cannot get ' . $sName . ' setting. StatusCode: ' . $res->getStatusCode() . '. Response is below.');
-				\Aurora\System\Api::Log($aBody);
+			if ($oClient) {
+				$res = $oClient->get('settings/' . $sName, [
+					'headers' => $aAdminHeaders,
+					'http_errors' => false
+				]);
+				$aBody = \json_decode($res->getBody(), true);
+				if ($res->getStatusCode() === 200 && $aBody['success'] === true && isset($aBody['_id']) && $aBody['_id'] === $sName) {
+					return $aBody['value'];
+				} else {
+					\Aurora\System\Api::Log('Cannot get ' . $sName . ' setting. StatusCode: ' . $res->getStatusCode() . '. Response is below.');
+					\Aurora\System\Api::Log($aBody);
+				}
 			}
 		} catch (ConnectException $oException) {
 			\Aurora\System\Api::Log('Cannot get ' . $sName . ' setting. Exception is below.');
