@@ -343,7 +343,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$mResult = false;
 		
 		$oSettings = $this->GetModuleSettings();
-		$iChatUsernameFormat = $oSettings->GetValue('ChatUsernameFormat', 1);
+		$iChatUsernameFormat = $oSettings->GetValue('ChatUsernameFormat', \Aurora\Modules\RocketChatWebclient\Enums\UsernameFormat::UsernameAndDomain);
 
 		$aEmailParts = explode("@", $sEmail); 
 		if (isset($aEmailParts[1])) {
