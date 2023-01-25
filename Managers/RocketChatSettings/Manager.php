@@ -102,19 +102,21 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 	private function setSetting($sName, $mValue, $oClient, $aAdminHeaders)
 	{
 		try {
-			$oRes = $oClient->post('settings/' . $sName, [
-				'json' => [
-					'value' => $mValue,
-				],
-				'headers' => $aAdminHeaders,
-				'http_errors' => false
-			]);
-			$aBody = \json_decode($oRes->getBody(), true);
-			if ($oRes->getStatusCode() === 200 && $aBody['success'] === true) {
-				return true;
-			} else {
-				\Aurora\System\Api::Log('Cannot set ' . $sName . ' setting. StatusCode: ' . $oRes->getStatusCode() . '. Response is below.');
-				\Aurora\System\Api::Log($aBody);
+			if ($oClient) {
+				$oRes = $oClient->post('settings/' . $sName, [
+					'json' => [
+						'value' => $mValue,
+					],
+					'headers' => $aAdminHeaders,
+					'http_errors' => false
+				]);
+				$aBody = \json_decode($oRes->getBody(), true);
+				if ($oRes->getStatusCode() === 200 && $aBody['success'] === true) {
+					return true;
+				} else {
+					\Aurora\System\Api::Log('Cannot set ' . $sName . ' setting. StatusCode: ' . $oRes->getStatusCode() . '. Response is below.');
+					\Aurora\System\Api::Log($aBody);
+				}
 			}
 		} catch (ConnectException $oException) {
 			\Aurora\System\Api::Log('Cannot set ' . $sName . ' setting. Exception is below.');
