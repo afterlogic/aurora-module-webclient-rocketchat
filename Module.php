@@ -65,8 +65,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     protected function isDemoUser($sEmail)
     {
-        $oDemoModePlugin = Api::GetModule('DemoModePlugin');
-        return !empty($oDemoModePlugin) && $oDemoModePlugin->CheckDemoUser($sEmail);
+        /** @var \Aurora\Modules\DemoModePlugin\Module $oDemoModePlugin */
+        $oDemoModePlugin = Api::GetModuleDecorator('DemoModePlugin');
+        return $oDemoModePlugin && $oDemoModePlugin->CheckDemoUser($sEmail);
     }
 
     protected function initLogging()
@@ -192,7 +193,10 @@ class Module extends \Aurora\System\Module\AbstractModule
     /**
      * Updates settings of the Chat Module.
      *
-     * @param boolean $EnableModule indicates if user turned on Chat Module.
+     * @param int $TenantId
+     * @param string $ChatUrl
+     * @param string $AdminUsername
+     * @param string $AdminPassword
      * @return boolean
      */
     public function UpdateSettings($TenantId, $ChatUrl, $AdminUsername, $AdminPassword = null)
