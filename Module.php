@@ -78,7 +78,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     protected function initLogging()
     {
-        if ($this->getConfig('EnableLogging', false)) {
+        if ($this->getModuleSettings()->EnableLogging) {
             $stack = HandlerStack::create();
             collect([
                 'REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}',
@@ -196,10 +196,11 @@ class Module extends \Aurora\System\Module\AbstractModule
         $oUser = \Aurora\System\Api::getAuthenticatedUser();
         if ($oUser instanceof \Aurora\Modules\Core\Models\User) {
             if ($oUser->isNormalOrTenant()) {
+                $oSettings = $this->GetModuleSettings();
                 $mResult = [
                     'ChatUrl' => $sChatUrl,
-                    'AllowAddMeetingLinkToEvent' => $this->getConfig('AllowAddMeetingLinkToEvent', false),
-                    'MeetingLinkUrl' => $this->getConfig('MeetingLinkUrl', '')
+                    'AllowAddMeetingLinkToEvent' => $oSettings->AllowAddMeetingLinkToEvent,
+                    'MeetingLinkUrl' => $oSettings->MeetingLinkUrl
                 ];
 
                 return $mResult;
@@ -732,7 +733,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                     }
 
                     if ($mResult && isset($mResult->data)) {
-                        $iAuthTokenCookieExpireTime = (int) \Aurora\System\Api::GetModule('Core')->getConfig('AuthTokenCookieExpireTime', 30);
+                        $iAuthTokenCookieExpireTime = (int) \Aurora\Modules\Core\Module::getInstance()->getModuleSettings()->AuthTokenCookieExpireTime;
                         @\setcookie(
                             'RocketChatAuthToken',
                             Utils::EncryptValue($mResult->data->authToken),

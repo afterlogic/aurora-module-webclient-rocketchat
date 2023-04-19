@@ -74,7 +74,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
         }
         $bLayoutHomeSetSuccess = $this->setSetting('Layout_Home_Body', $sLayoutHomeBody, $oClient, $aAdminHeaders);
 
-        $sSiteName = \Aurora\System\Api::GetModule('Core')->getConfig('SiteName');
+        $sSiteName = \Aurora\Modules\Core\Module::getInstance()->getModuleSettings()->SiteName;
         $bSiteNameSetSuccess = $this->setSetting('Site_Name', $sSiteName, $oClient, $aAdminHeaders);
 
         return $bLayoutHomeSetSuccess && $bSiteNameSetSuccess;
