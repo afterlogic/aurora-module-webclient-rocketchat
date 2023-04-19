@@ -196,7 +196,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         $oUser = \Aurora\System\Api::getAuthenticatedUser();
         if ($oUser instanceof \Aurora\Modules\Core\Models\User) {
             if ($oUser->isNormalOrTenant()) {
-                $oSettings = $this->GetModuleSettings();
+                $oSettings = $this->getModuleSettings();
                 $mResult = [
                     'ChatUrl' => $sChatUrl,
                     'AllowAddMeetingLinkToEvent' => $oSettings->AllowAddMeetingLinkToEvent,
