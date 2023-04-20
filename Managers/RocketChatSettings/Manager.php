@@ -15,6 +15,8 @@ use GuzzleHttp\Exception\ConnectException;
  * @copyright Copyright (c) 2023, Afterlogic Corp.
  *
  * @package RocketChatWebclient
+ *
+ * @property Module $oModule
  */
 class Manager extends \Aurora\System\Managers\AbstractManager
 {
@@ -74,7 +76,7 @@ class Manager extends \Aurora\System\Managers\AbstractManager
         }
         $bLayoutHomeSetSuccess = $this->setSetting('Layout_Home_Body', $sLayoutHomeBody, $oClient, $aAdminHeaders);
 
-        $sSiteName = \Aurora\Modules\Core\Module::getInstance()->getModuleSettings()->SiteName;
+        $sSiteName = \Aurora\Modules\Core\Module::getInstance()->oModuleSettings->SiteName;
         $bSiteNameSetSuccess = $this->setSetting('Site_Name', $sSiteName, $oClient, $aAdminHeaders);
 
         return $bLayoutHomeSetSuccess && $bSiteNameSetSuccess;

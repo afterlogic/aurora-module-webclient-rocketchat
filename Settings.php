@@ -8,6 +8,7 @@
 namespace Aurora\Modules\RocketChatWebclient;
 
 use Aurora\System\SettingsProperty;
+use Aurora\Modules\RocketChatWebclient\Enums;
 
 /**
  * @property bool $Disabled
@@ -68,9 +69,9 @@ class Settings extends \Aurora\System\Module\Settings
                 "Jitsi Meet link base URL",
             ),
             "ChatUsernameFormat" => new SettingsProperty(
-                1,
-                "int",
-                null,
+                Enums\UsernameFormat::UsernameAndDomain,
+                "spec",
+                Enums\UsernameFormat::class,
                 "Defines how chat username is generated from email address: 0 - username, 1 - username.domain (without TLD), 2 - username.domain.tld",
             ),
         ];
