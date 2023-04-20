@@ -240,21 +240,23 @@ class Module extends \Aurora\System\Module\AbstractModule
             $oTenant = Api::getTenantById($TenantId);
 
             if ($oTenant) {
-                $oSettings->SetTenantValue($oTenant->Name, 'ChatUrl', $ChatUrl);
-                $oSettings->SetTenantValue($oTenant->Name, 'AdminUsername', $AdminUsername);
+                $aValues = [
+                    'ChatUrl' => $ChatUrl,
+                    'AdminUsername' => $AdminUsername
+                ];
                 if (isset($AdminPassword)) {
-                    $oSettings->SetTenantValue($oTenant->Name, 'AdminPassword', Utils::EncryptValue($AdminPassword));
+                    $aValues['AdminPassword'] = Utils::EncryptValue($AdminPassword);
                 }
 
-                return $oSettings->SaveTenantSettings($oTenant->Name);
+                return $oSettings->SaveTenantSettings($oTenant->Name, $aValues);
             }
         } else {
             Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
 
-            $oSettings->SetValue('ChatUrl', $ChatUrl);
-            $oSettings->SetValue('AdminUsername', $AdminUsername);
+            $oSettings->ChatUrl = $ChatUrl;
+            $oSettings->AdminUsername = $AdminUsername;
             if (isset($AdminPassword)) {
-                $oSettings->SetValue('AdminPassword', Utils::EncryptValue($AdminPassword));
+                $oSettings->AdminPassword = Utils::EncryptValue($AdminPassword);
             }
 
             return $oSettings->Save();
@@ -404,8 +406,9 @@ class Module extends \Aurora\System\Module\AbstractModule
                 if ($EncrypdedPassword) {
                     $mResult['AdminPass'] = Utils::DecryptValue($mResult['AdminPass']);
                 } else {
-                    $oSettings->SetTenantValue($oTenant->Name, 'AdminPassword', Utils::EncryptValue($mResult['AdminPass']));
-                    $oSettings->SaveTenantSettings($oTenant->Name);
+                    $oSettings->SaveTenantSettings($oTenant->Name, [
+                        'AdminPassword' => Utils::EncryptValue($mResult['AdminPass'])
+                    ]);
                 }
             }
         } else {
@@ -416,7 +419,7 @@ class Module extends \Aurora\System\Module\AbstractModule
             if ($EncrypdedPassword) {
                 $mResult['AdminPass'] = Utils::DecryptValue($mResult['AdminPass']);
             } else {
-                $oSettings->SetValue('AdminPassword', Utils::EncryptValue($mResult['AdminPass']));
+                $oSettings->AdminPassword = Utils::EncryptValue($mResult['AdminPass']);
                 $oSettings->Save();
             }
         }
