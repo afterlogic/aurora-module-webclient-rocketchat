@@ -52,9 +52,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     protected function initConfig()
     {
-        $oSettings = $this->getModuleSettings();
-        $this->sChatUrl = $oSettings->GetValue('ChatUrl', '');
-        $sAdminUser = $oSettings->GetValue('AdminUsername', '');
+        $this->sChatUrl = $this->oModuleSettings->ChatUrl;
+        $sAdminUser = $this->oModuleSettings->AdminUsername;
 
         if (!empty($this->sChatUrl) && !empty($sAdminUser)) {
             $this->client = new Client([
@@ -151,7 +150,7 @@ class Module extends \Aurora\System\Module\AbstractModule
     protected function getClient($iTenantId = null)
     {
         $mResult = null;
-        $oSettings = $this->getModuleSettings();
+        $oSettings = $this->oModuleSettings;
         $sChatUrl = '';
         if (isset($iTenantId)) {
             $oTenant = Api::getTenantById($iTenantId);
@@ -159,7 +158,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                 $sChatUrl = $oSettings->GetTenantValue($oTenant->Name, 'ChatUrl', '');
             }
         } else {
-            $sChatUrl = $oSettings->GetValue('ChatUrl', '');
+            $sChatUrl = $oSettings->ChatUrl;
             if (isset($this->client)) {
                 return $this->client;
             }
@@ -187,7 +186,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         $sChatUrl = '';
         $sAdminUsername = '';
 
-        $oSettings = $this->getModuleSettings();
+        $oSettings = $this->oModuleSettings;
         if (!empty($TenantId)) {
             Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
             $oTenant = Api::getTenantById($TenantId);
@@ -197,14 +196,14 @@ class Module extends \Aurora\System\Module\AbstractModule
                 $sAdminUsername = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', $sAdminUsername);
             }
         } else {
-            $sChatUrl = $oSettings->GetValue('ChatUrl', $sChatUrl);
-            $sAdminUsername = $oSettings->GetValue('AdminUsername', $sAdminUsername);
+            $sChatUrl = $oSettings->ChatUrl;
+            $sAdminUsername = $oSettings->AdminUsername;
         }
 
         $oUser = \Aurora\System\Api::getAuthenticatedUser();
         if ($oUser instanceof \Aurora\Modules\Core\Models\User) {
             if ($oUser->isNormalOrTenant()) {
-                $oSettings = $this->getModuleSettings();
+                $oSettings = $this->oModuleSettings;
                 $mResult = [
                     'ChatUrl' => $sChatUrl,
                     'AllowAddMeetingLinkToEvent' => $this->oModuleSettings->AllowAddMeetingLinkToEvent,
@@ -234,7 +233,7 @@ class Module extends \Aurora\System\Module\AbstractModule
      */
     public function UpdateSettings($TenantId, $ChatUrl, $AdminUsername, $AdminPassword = null)
     {
-        $oSettings = $this->getModuleSettings();
+        $oSettings = $this->oModuleSettings;
         if (!empty($TenantId)) {
             Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
             $oTenant = Api::getTenantById($TenantId);
@@ -369,9 +368,7 @@ class Module extends \Aurora\System\Module\AbstractModule
     protected function getUserNameFromEmail($sEmail)
     {
         $mResult = false;
-
-        $oSettings = $this->getModuleSettings();
-        $iChatUsernameFormat = $oSettings->GetValue('ChatUsernameFormat', \Aurora\Modules\RocketChatWebclient\Enums\UsernameFormat::UsernameAndDomain);
+        $iChatUsernameFormat = $this->oModuleSettings->ChatUsernameFormat;
 
         $aEmailParts = explode("@", $sEmail);
         if (isset($aEmailParts[1])) {
@@ -395,7 +392,7 @@ class Module extends \Aurora\System\Module\AbstractModule
     {
         $mResult = false;
 
-        $oSettings = $this->getModuleSettings();
+        $oSettings = $this->oModuleSettings;
         if (isset($TenantId)) {
             $oTenant = Api::getTenantById($TenantId);
             if ($oTenant) {
@@ -413,8 +410,8 @@ class Module extends \Aurora\System\Module\AbstractModule
             }
         } else {
             $mResult = [];
-            $mResult['AdminUser'] = $oSettings->GetValue('AdminUsername', '');
-            $mResult['AdminPass'] = $oSettings->GetValue('AdminPassword', '');
+            $mResult['AdminUser'] = $oSettings->AdminUsername;
+            $mResult['AdminPass'] = $oSettings->AdminPassword;
             Api::AddSecret($mResult['AdminPass']);
             if ($EncrypdedPassword) {
                 $mResult['AdminPass'] = Utils::DecryptValue($mResult['AdminPass']);
@@ -744,7 +741,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                     }
 
                     if ($mResult && isset($mResult->data)) {
-                        $iAuthTokenCookieExpireTime = (int) \Aurora\Modules\Core\Module::getInstance()->getModuleSettings()->AuthTokenCookieExpireTime;
+                        $iAuthTokenCookieExpireTime = (int) \Aurora\Modules\Core\Module::getInstance()->oModuleSettings->AuthTokenCookieExpireTime;
                         @\setcookie(
                             'RocketChatAuthToken',
                             Utils::EncryptValue($mResult->data->authToken),
