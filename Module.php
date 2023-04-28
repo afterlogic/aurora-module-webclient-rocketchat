@@ -243,9 +243,10 @@ class Module extends \Aurora\System\Module\AbstractModule
                     'ChatUrl' => $ChatUrl,
                     'AdminUsername' => $AdminUsername
                 ];
-                if (isset($AdminPassword)) {
-                    $aValues['AdminPassword'] = Utils::EncryptValue($AdminPassword);
+                if (!isset($AdminPassword)) {
+                    $AdminPassword = $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword');
                 }
+                $aValues['AdminPassword'] = Utils::EncryptValue($AdminPassword);
 
                 return $oSettings->SaveTenantSettings($oTenant->Name, $aValues);
             }
@@ -254,9 +255,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 
             $oSettings->ChatUrl = $ChatUrl;
             $oSettings->AdminUsername = $AdminUsername;
-            if (isset($AdminPassword)) {
-                $oSettings->AdminPassword = Utils::EncryptValue($AdminPassword);
+            if (!isset($AdminPassword)) {
+                $AdminPassword = $oSettings->AdminPassword;
             }
+            $oSettings->AdminPassword = Utils::EncryptValue($AdminPassword);
 
             return $oSettings->Save();
         }
@@ -390,38 +392,34 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     protected function getAdminCredentials($TenantId = null, $EncrypdedPassword = true)
     {
-        $mResult = false;
+        static $mResult = false;
 
-        $oSettings = $this->oModuleSettings;
-        if (isset($TenantId)) {
-            $oTenant = Api::getTenantById($TenantId);
-            if ($oTenant) {
-                $mResult = [];
-                $mResult['AdminUser'] = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', '');
-                $mResult['AdminPass'] = $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword', '');
-                Api::AddSecret($mResult['AdminPass']);
+        if (!$mResult) {
+            $adminCreds = [];
+            $oSettings = $this->oModuleSettings;
+            if (isset($TenantId)) {
+                $oTenant = Api::getTenantById($TenantId);
+                if ($oTenant) {
+                    $adminCreds = [
+                        'AdminUser' => $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', ''),
+                        'AdminPass' => $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword', '')
+                    ];
+                }
+            } else {
+                $adminCreds = [
+                    'AdminUser' => $oSettings->AdminUsername,
+                    'AdminPass' => $oSettings->AdminPassword
+                ];
+            }
+            if (is_array($adminCreds) && isset($adminCreds['AdminPass'])) {
                 if ($EncrypdedPassword) {
-                    $mResult['AdminPass'] = Utils::DecryptValue($mResult['AdminPass']);
-                } else {
-                    $oSettings->SaveTenantSettings($oTenant->Name, [
-                        'AdminPassword' => Utils::EncryptValue($mResult['AdminPass'])
-                    ]);
+                    $adminCreds['AdminPass'] = Utils::DecryptValue($adminCreds['AdminPass']);
+                }
+                if ($adminCreds['AdminPass']) {
+                    Api::AddSecret($adminCreds['AdminPass']);
+                    $mResult = $adminCreds;
                 }
             }
-        } else {
-            $mResult = [];
-            $mResult['AdminUser'] = $oSettings->AdminUsername;
-            $mResult['AdminPass'] = $oSettings->AdminPassword;
-            Api::AddSecret($mResult['AdminPass']);
-            if ($EncrypdedPassword) {
-                $mResult['AdminPass'] = Utils::DecryptValue($mResult['AdminPass']);
-            } else {
-                $oSettings->AdminPassword = Utils::EncryptValue($mResult['AdminPass']);
-                $oSettings->Save();
-            }
-        }
-        if (is_array($mResult) && isset($mResult['AdminPass'])) {
-            Api::AddSecret($mResult['AdminPass']);
         }
 
         return $mResult;
@@ -465,7 +463,7 @@ class Module extends \Aurora\System\Module\AbstractModule
             $aAdminCreds = $this->getAdminCredentials($TenantId, false);
             $mResult = $this->loginAdminAccount($TenantId, $aAdminCreds);
         }
-        if (!isset($TenantId)) {
+        if (!isset($TenantId) && $mResult) {
             $this->adminAccount = $mResult;
         }
 
