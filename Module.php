@@ -67,7 +67,7 @@ class Module extends \Aurora\System\Module\AbstractModule
     protected function isDemoUser($sEmail)
     {
         $bDemo = false;
-        
+
         if (class_exists('\Aurora\Modules\DemoModePlugin\Module')) {
             /** @var \Aurora\Modules\DemoModePlugin\Module $oDemoModePlugin */
             $oDemoModePlugin = Api::GetModuleDecorator('DemoModePlugin');
