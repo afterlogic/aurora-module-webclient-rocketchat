@@ -137,6 +137,7 @@ export default {
 
   data() {
     return {
+      // unmounted: false,
       chatUrl: '',
       adminUsername: '',
       adminPassword: FAKE_PASS,
@@ -155,16 +156,15 @@ export default {
     tenantId() {
       return this.$store.getters['tenants/getCurrentTenantId']
     },
-
-    allTenants() {
-      return this.$store.getters['tenants/getTenants']
-    },
   },
 
   watch: {
-    allTenants() {
-      this.populate()
-    },
+    '$store.state.tenants.tenants': {
+      handler: function () {
+        this.populate()
+      },
+      deep: true
+    }
   },
 
   mounted() {
@@ -172,6 +172,10 @@ export default {
     this.saving = false
     this.populate()
   },
+
+  // unmounted() {
+  //   this.unmounted = true
+  // },
 
   beforeRouteLeave(to, from, next) {
     this.$root.doBeforeRouteLeave(to, from, next)
@@ -205,6 +209,8 @@ export default {
 
     populate() {
       const tenant = this.$store.getters['tenants/getTenant'](this.tenantId)
+
+      // debugger
       if (tenant) {
         if (tenant.completeData['RocketChatWebclient::ChatUrl'] !== undefined) {
           this.tenant = tenant
@@ -261,26 +267,30 @@ export default {
     },
 
     getSettings() {
-      this.loading = true
-      const parameters = {
-        TenantId: this.tenantId,
-      }
-      webApi
-        .sendRequest({
-          moduleName: 'RocketChatWebclient',
-          methodName: 'GetSettings',
-          parameters,
-        })
-        .then((result) => {
-          this.loading = false
-          if (result) {
-            const data = {
-              'RocketChatWebclient::ChatUrl': types.pString(result.ChatUrl),
-              'RocketChatWebclient::AdminUsername': types.pString(result.AdminUsername),
+      if (!this.loading) {
+        this.loading = true
+        const parameters = {
+          TenantId: this.tenantId,
+        }
+        webApi
+          .sendRequest({
+            moduleName: 'RocketChatWebclient',
+            methodName: 'GetSettings',
+            parameters,
+          })
+          .then((result) => {
+            this.loading = false
+            if (result
+            //  && !this.unmounted
+            ) {
+              const data = {
+                'RocketChatWebclient::ChatUrl': types.pString(result.ChatUrl),
+                'RocketChatWebclient::AdminUsername': types.pString(result.AdminUsername),
+              }
+              this.$store.commit('tenants/setTenantCompleteData', { id: this.tenantId, data })
             }
-            this.$store.commit('tenants/setTenantCompleteData', { id: this.tenantId, data })
-          }
-        })
+          })
+      }
     },
 
     attemptToApplyRequiredChanges() {
