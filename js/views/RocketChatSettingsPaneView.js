@@ -1,9 +1,6 @@
 'use strict';
 
 var
-	_ = require('underscore'),
-	$ = require('jquery'),
-	ko = require('knockout'),
 	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 	
