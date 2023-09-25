@@ -35,7 +35,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 {
     public $oRocketChatSettingsManager = null;
 
-    protected $sChatUrl= "";
+    protected $sChatUrl = "";
 
     protected $sDemoPass = "demo";
 
@@ -352,7 +352,7 @@ class Module extends \Aurora\System\Module\AbstractModule
     protected function showChat($sUrl = '', $sIntegratorLinks = '')
     {
         $aUser = $this->InitChat();
-        $sResult = \file_get_contents($this->GetPath().'/templates/Chat.html');
+        $sResult = \file_get_contents($this->GetPath() . '/templates/Chat.html');
         if (\is_string($sResult)) {
             echo strtr($sResult, [
                 '{{TOKEN}}' => $aUser ? $aUser['authToken'] : '',
@@ -362,7 +362,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         }
     }
 
-    protected function showError($sMessage= '')
+    protected function showError($sMessage = '')
     {
         echo $sMessage;
     }
@@ -380,10 +380,10 @@ class Module extends \Aurora\System\Module\AbstractModule
         if (isset($aEmailParts[0])) {
             $mResult = $aEmailParts[0];
             if (isset($aDomainParts[0]) && ($iChatUsernameFormat == \Aurora\Modules\RocketChatWebclient\Enums\UsernameFormat::UsernameAndDomain)) {
-                $mResult .= ".". $aDomainParts[0];
+                $mResult .= "." . $aDomainParts[0];
             }
             if (isset($aEmailParts[1]) && ($iChatUsernameFormat == \Aurora\Modules\RocketChatWebclient\Enums\UsernameFormat::UsernameAndFullDomainName)) {
-                $mResult .= ".". $aEmailParts[1];
+                $mResult .= "." . $aEmailParts[1];
             }
         }
 
