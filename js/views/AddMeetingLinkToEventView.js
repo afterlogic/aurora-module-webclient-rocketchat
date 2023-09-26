@@ -2,24 +2,16 @@
 
 const
 	ko = require('knockout'),
-	moment = require('moment'),
 
 	ContenteditableUtils = require('%PathToCoreWebclientModule%/js/utils/Contenteditable.js'),
+	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
 
 	Settings = require('modules/%ModuleName%/js/Settings.js')
 ;
 
-function prepareMeetingLinkUrl(url)
-{
-	if (url !== '' && url.substr(-1) !== '/') {
-		return url + '/';
-	}
-	return url;
-}
-
 function CAddMeetingLinkToEventView()
 {
-	this.meetingLinkUrl = prepareMeetingLinkUrl(Settings.MeetingLinkUrl);
+	this.meetingLinkUrl = Settings.MeetingLinkUrl.replace(/[^\/]$/, '$&/'); //adding '/' at the end if it's missing
 	this.allowAddMeetingLink = Settings.AllowAddMeetingLinkToEvent && Settings.MeetingLinkUrl.length !== 0;
 	this.focusedDom = ko.observable(null);
 }
@@ -66,7 +58,7 @@ CAddMeetingLinkToEventView.prototype.addMeetingLink = function ()
 {
 	const
 		meetingLinkUrl = this.meetingLinkUrl,
-		meetingId = moment().unix(),
+		meetingId = Utils.getRandomHash(32),
 		url = `${meetingLinkUrl}${meetingId}`,
 		html = `<a href="${url}">${url}</a>`
 	;
