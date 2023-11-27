@@ -5,17 +5,11 @@ module.exports = function (oAppData) {
 		ko = require('knockout'),
 
 		App = require('%PathToCoreWebclientModule%/js/App.js'),
-
 		TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
-
-		Settings = require('modules/%ModuleName%/js/Settings.js'),
-		
+		Settings = require('modules/%ModuleName%/js/Settings.js'),	
 		WindowOpener = require('%PathToCoreWebclientModule%/js/WindowOpener.js'),
-
-		// Ajax = require('modules/%ModuleName%/js/Ajax.js'),
 		
 		oOpenedWindows = [],
-		
 		HeaderItemView = null
 	;
 	
@@ -42,6 +36,7 @@ module.exports = function (oAppData) {
 				return oScreens;
 			}
 		};
+
 		if (!App.isNewTab())
 		{
 			App.subscribeEvent('CalendarWebclient::RegisterEditEventController', function ({register, view}) {
@@ -76,12 +71,9 @@ module.exports = function (oAppData) {
 							'CssClass': 'chat',
 							'Handler': function () {
 								var oWin = oOpenedWindows[this.uuid()];
-								if (oWin && !oWin.closed)
-								{
+								if (oWin && !oWin.closed) {
 									oWin.focus();
-								}
-								else
-								{
+								} else {
 									var
 										iScreenWidth = window.screen.width,
 										iWidth = 360,
@@ -96,8 +88,7 @@ module.exports = function (oAppData) {
 										sSize = ',width=' + iWidth + ',height=' + iHeight + ',top=' + iTop + ',left=' + iLeft
 									;
 									oWin = WindowOpener.open(sUrl, sName, false, sSize);
-									if (oWin)
-									{
+									if (oWin) {
 										oOpenedWindows[this.uuid()] = oWin;
 									}
 								}
@@ -109,14 +100,14 @@ module.exports = function (oAppData) {
 					});
 				}
 			};
+
 			/**
 			 * Returns object of header item view of the module.
 			 * 
 			 * @returns {Object}
 			 */
 			result.getHeaderItem = function () {
-				if (HeaderItemView === null)
-				{
+				if (HeaderItemView === null) {
 					HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
 				}
 				if (Settings.ChatUrl !== '') {

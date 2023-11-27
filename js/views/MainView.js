@@ -6,6 +6,7 @@ var
 
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
+	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
 
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
@@ -21,18 +22,58 @@ var
  */
 function CMainView()
 {
-	CAbstractScreenView.call(this, '%ModuleName%');
+	CAbstractScreenView.call(this, '%ModuleName%')
 	
-	this.sChatUrl = Settings.ChatUrl;
+	this.bInitialized = false
+	this.sChatUrl = Settings.ChatUrl
+	this.iframeDom = ko.observable(null)
+	this.iframeLoaded = ko.observable(false)
+	this.chatToken = ko.observable('')
 
-	this.iframeDom = ko.observable(null);
-	this.avaDom = ko.observable(null);
+	ko.computed(function () {
+		if (this.iframeDom() && this.iframeLoaded() && this.chatToken()) {
+			this.init(this.chatToken());
+		}
+	}, this)
+
+	Ajax.send(Settings.ServerModuleName,'InitChat', {}, function(oResponse) {
+		if(oResponse.Result && oResponse.Result['authToken']) {
+			this.chatToken(oResponse.Result['authToken'])
+		}
+	}, this);
 }
 
-_.extendOwn(CMainView.prototype, CAbstractScreenView.prototype);
+_.extendOwn(CMainView.prototype, CAbstractScreenView.prototype)
 
-CMainView.prototype.ViewTemplate = '%ModuleName%_MainView';
-CMainView.prototype.ViewConstructorName = 'CMainView';
+CMainView.prototype.ViewTemplate = '%ModuleName%_MainView'
+CMainView.prototype.ViewConstructorName = 'CMainView'
+
+CMainView.prototype.onFrameLoad = function () {
+	this.iframeLoaded(true)
+}
+
+CMainView.prototype.init = function (sChatAuthToken) {
+	if (!this.bInitialized) {
+		this.iframeDom()[0].contentWindow.postMessage({
+			externalCommand: 'login-with-token',
+			token: sChatAuthToken
+		}, '*');
+		
+		this.setAuroraThemeToRocketChat(this.iframeDom()[0])
+		
+		window.addEventListener('message', function(oEvent) {
+			if (oEvent && oEvent.data && oEvent.data.eventName === 'notification') {
+				this.showNotification(oEvent.data.data.notification)
+			}
+			if (oEvent && oEvent.data && oEvent.data.eventName === 'unread-changed') {
+				const HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js')
+				HeaderItemView.unseenCount(Types.pInt(oEvent.data.data))
+			}
+		}.bind(this))
+		
+		this.bInitialized = true
+	}
+}
 
 CMainView.prototype.setAuroraThemeToRocketChat = function (oIframe) {
 	function _setTheme() {
@@ -40,35 +81,14 @@ CMainView.prototype.setAuroraThemeToRocketChat = function (oIframe) {
 			externalCommand: 'set-aurora-theme',
 			theme: UserSettings.Theme
 		}, '*');
-	};
-	setTimeout(_setTheme, 500); // to apply the theme more immediate if possible
-	setTimeout(_setTheme, 1000); // this will most likely work first
-	setTimeout(_setTheme, 2000); // to be sure the theme will be applied
-};
-
-CMainView.prototype.onLoad = function () {
-	if (this.iframeDom() && this.iframeDom().length > 0) {
-		this.iframeDom()[0].contentWindow.postMessage({
-			externalCommand: 'login-with-token',
-			token: Settings.ChatAuthToken
-		}, '*');
-
-		this.setAuroraThemeToRocketChat(this.iframeDom()[0]);
-
-		window.addEventListener('message', function(oEvent) {
-			if (oEvent && oEvent.data && oEvent.data.eventName === 'notification') {
-				this.showNotification(oEvent.data.data.notification);
-			}
-			if (oEvent && oEvent.data && oEvent.data.eventName === 'unread-changed') {
-				var HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js');
-				HeaderItemView.unseenCount(Types.pInt(oEvent.data.data));
-			}
-		}.bind(this));
 	}
-};
+	setTimeout(_setTheme, 500) // to apply the theme more immediate if possible
+	setTimeout(_setTheme, 1000) // this will most likely work first
+	setTimeout(_setTheme, 2000) // to be sure the theme will be applied
+}
 
 CMainView.prototype.showNotification = function (oNotification) {
-	var
+	const
 		oParameters = {
 			action: 'show',
 			icon: this.sChatUrl + 'avatar/' + oNotification.payload.sender.username + '?size=50&format=png',
@@ -101,7 +121,7 @@ CMainView.prototype.showNotification = function (oNotification) {
 		}
 	;
 
-	Utils.desktopNotify(oParameters);
-};
+	Utils.desktopNotify(oParameters)
+}
 
-module.exports = new CMainView();
+module.exports = new CMainView()
