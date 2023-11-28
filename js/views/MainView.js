@@ -32,7 +32,7 @@ function CMainView()
 
 	ko.computed(function () {
 		if (this.iframeDom() && this.iframeLoaded() && this.chatToken()) {
-			this.init(this.chatToken());
+			this.init(this.chatToken())
 		}
 	}, this)
 
@@ -54,22 +54,26 @@ CMainView.prototype.onFrameLoad = function () {
 
 CMainView.prototype.init = function (sChatAuthToken) {
 	if (!this.bInitialized) {
+		window.addEventListener('message', function(oEvent) {
+			if (oEvent && oEvent.data) {
+				console.log('iframe message', oEvent.data.eventName)
+				if(oEvent.data.eventName === 'notification') {
+					this.showNotification(oEvent.data.data.notification)
+				}
+
+				if (oEvent.data.eventName === 'unread-changed') {
+					const HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js')
+					HeaderItemView.unseenCount(Types.pInt(oEvent.data.data))
+				}
+			}
+		}.bind(this))
+
 		this.iframeDom()[0].contentWindow.postMessage({
 			externalCommand: 'login-with-token',
 			token: sChatAuthToken
-		}, '*');
+		}, '*')
 		
 		this.setAuroraThemeToRocketChat(this.iframeDom()[0])
-		
-		window.addEventListener('message', function(oEvent) {
-			if (oEvent && oEvent.data && oEvent.data.eventName === 'notification') {
-				this.showNotification(oEvent.data.data.notification)
-			}
-			if (oEvent && oEvent.data && oEvent.data.eventName === 'unread-changed') {
-				const HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js')
-				HeaderItemView.unseenCount(Types.pInt(oEvent.data.data))
-			}
-		}.bind(this))
 		
 		this.bInitialized = true
 	}
