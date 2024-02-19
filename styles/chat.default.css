@@ -9,6 +9,10 @@ svg.rc-message-box__action {
 }
 
 /* Aurora themes */
+.rcx-sidebar--main {
+  --rcx-color-font-default: black !important;
+}
+
 body,
 .rc-old.full-page,
 #rocket-chat {
