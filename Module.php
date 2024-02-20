@@ -157,10 +157,16 @@ class Module extends \Aurora\System\Module\AbstractModule
                     'ChatUrl' => $ChatUrl,
                     'AdminUsername' => $AdminUsername
                 ];
-                if (!isset($AdminPassword)) {
-                    $AdminPassword = $oSettings->GetTenantValue($oTenant->Name, 'AdminPassword');
+
+                if ($AdminPassword) {
+                    $sDecryptedPassword = Utils::DecryptValue($AdminPassword);
+                    // checks that password is not encrypted already
+                    if ($sDecryptedPassword === false) {
+                        $aValues['AdminPassword'] = Utils::EncryptValue($AdminPassword);
+                    } else {
+                        $aValues['AdminPassword'] = $AdminPassword;
+                    }
                 }
-                $aValues['AdminPassword'] = Utils::EncryptValue($AdminPassword);
 
                 return $oSettings->SaveTenantSettings($oTenant->Name, $aValues);
             }
@@ -169,10 +175,16 @@ class Module extends \Aurora\System\Module\AbstractModule
 
             $oSettings->ChatUrl = $ChatUrl;
             $oSettings->AdminUsername = $AdminUsername;
-            if (!isset($AdminPassword)) {
-                $AdminPassword = $oSettings->AdminPassword;
+
+            if ($AdminPassword) {
+                $sDecryptedPassword = Utils::DecryptValue($AdminPassword);
+                // checks that password is not encrypted already
+                if ($sDecryptedPassword === false) {
+                    $oSettings->AdminPassword = Utils::EncryptValue($AdminPassword);
+                } else {
+                    $oSettings->AdminPassword = $AdminPassword;
+                }
             }
-            $oSettings->AdminPassword = Utils::EncryptValue($AdminPassword);
 
             return $oSettings->Save();
         }
