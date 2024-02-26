@@ -331,7 +331,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                             Utils::EncryptValue($mResult->data->authToken),
                             \strtotime('+' . $iAuthTokenCookieExpireTime . ' days'),
                             \Aurora\System\Api::getCookiePath(),
-                            null,
+                            '',
                             \Aurora\System\Api::getCookieSecure()
                         );
                         @\setcookie(
@@ -339,7 +339,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                             $mResult->data->userId,
                             \strtotime('+' . $iAuthTokenCookieExpireTime . ' days'),
                             \Aurora\System\Api::getCookiePath(),
-                            null,
+                            '',
                             \Aurora\System\Api::getCookieSecure()
                         );
                         $oUser->save();
