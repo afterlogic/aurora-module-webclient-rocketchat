@@ -54,9 +54,21 @@ CMainView.prototype.onFrameLoad = function () {
 
 CMainView.prototype.init = function (sChatAuthToken) {
 	if (!this.bInitialized) {
+		var iframe = this.iframeDom()[0];
+		function _login() {
+			iframe.contentWindow.postMessage({
+				externalCommand: 'login-with-token',
+				token: sChatAuthToken
+			}, '*')
+		}
 		window.addEventListener('message', function(oEvent) {
 			if (oEvent && oEvent.data) {
-				console.log('iframe message', oEvent.data.eventName)
+				console.log('iframe message:', oEvent.data.eventName)
+
+				if (oEvent.data.eventName === 'startup') {
+					setTimeout(_login, 500)
+				}
+
 				if(oEvent.data.eventName === 'notification') {
 					this.showNotification(oEvent.data.data.notification)
 				}
@@ -67,13 +79,8 @@ CMainView.prototype.init = function (sChatAuthToken) {
 				}
 			}
 		}.bind(this))
-
-		this.iframeDom()[0].contentWindow.postMessage({
-			externalCommand: 'login-with-token',
-			token: sChatAuthToken
-		}, '*')
 		
-		this.setAuroraThemeToRocketChat(this.iframeDom()[0])
+		this.setAuroraThemeToRocketChat(iframe)
 		
 		this.bInitialized = true
 	}
