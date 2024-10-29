@@ -86,6 +86,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         $this->AddEntry('chat-direct', 'EntryChatDirect');
 
         $this->subscribeEvent('Core::DeleteUser::before', array($this, 'onBeforeDeleteUser'));
+        $this->subscribeEvent('Core::Logout::after', array($this, 'onAfterLogout'));
     }
 
     /**
@@ -325,23 +326,23 @@ class Module extends \Aurora\System\Module\AbstractModule
                     }
 
                     if ($mResult && isset($mResult->data)) {
-                        $iAuthTokenCookieExpireTime = (int) \Aurora\Modules\Core\Module::getInstance()->oModuleSettings->AuthTokenCookieExpireTime;
-                        @\setcookie(
+                        $iAuthTokenCookieExpireTime = (int) CoreModule::getInstance()->oModuleSettings->AuthTokenCookieExpireTime;
+                        $sSameSite = CoreModule::getInstance()->oModuleSettings->AuthTokenCookieSameSite;
+
+                        Api::setCookie(
                             'RocketChatAuthToken',
                             Utils::EncryptValue($mResult->data->authToken),
                             \strtotime('+' . $iAuthTokenCookieExpireTime . ' days'),
-                            \Aurora\System\Api::getCookiePath(),
-                            '',
-                            \Aurora\System\Api::getCookieSecure()
+                            $sSameSite
                         );
-                        @\setcookie(
+
+                        Api::setCookie(
                             'RocketChatUserId',
                             $mResult->data->userId,
                             \strtotime('+' . $iAuthTokenCookieExpireTime . ' days'),
-                            \Aurora\System\Api::getCookiePath(),
-                            '',
-                            \Aurora\System\Api::getCookieSecure()
+                            $sSameSite
                         );
+
                         $oUser->save();
                         $mResult = [
                             'authToken' => $mResult->data->authToken,
@@ -893,5 +894,23 @@ class Module extends \Aurora\System\Module\AbstractModule
             \Aurora\System\Api::Log('Cannot delete ' . $sUserName . ' user from RocketChat. Exception is below.');
             \Aurora\System\Api::LogException($oException);
         }
+    }
+
+    public function onAfterLogout($aArgs, &$mResult)
+    {
+        $sSameSite = CoreModule::getInstance()->oModuleSettings->AuthTokenCookieSameSite;
+
+        \Aurora\System\Api::setCookie(
+            'RocketChatAuthToken',
+            '',
+            -1,
+            $sSameSite
+        );
+        \Aurora\System\Api::setCookie(
+            'RocketChatUserId',
+            '',
+            -1,
+            $sSameSite
+        );
     }
 }
