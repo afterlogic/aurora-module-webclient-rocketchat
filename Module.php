@@ -473,29 +473,36 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     protected function initLogging()
     {
-        if ($this->oModuleSettings->EnableLogging) {
+        if ($this->oModuleSettings->EnableLogging && !$this->stack) {
             $stack = HandlerStack::create();
+            $oLogger = new Logger('rocketchat');
             collect([
                 'REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}',
                 'RESPONSE: {code} - {res_body}',
-            ])->each(function ($messageFormat) use ($stack) {
+            ])->each(function ($messageFormat) use ($stack, $oLogger) {
                 // We'll use unshift instead of push, to add the middleware to the bottom of the stack, not the top
-                $oLogger = new Logger('rocketchat-log');
                 $oLogger->pushProcessor(function ($record) {
                     $record['message'] = str_replace(Api::$aSecretWords, '*****', $record['message']);
-                    $record['message'] = preg_replace('/(X-Auth-Token|X-2fa-code):(.+?\s)/i', '$1: ***** ', $record['message']);
-                    $record['message'] = preg_replace('/("bcrypt"):(.*?\})/i', '$1:"*****"}', $record['message']);
-                    $record['message'] = preg_replace('/("authToken"):(.*?,)/i', '$1:"*****",', $record['message']);
+                    $record['message'] = preg_replace(
+                        [
+                            '/(X-Auth-Token|X-2fa-code):(.+?\s)/i',
+                            '/("bcrypt"):(.*?\})/i',
+                            '/("authToken"):(.*?,)/i'
+                        ],
+                        '$1: ***** ',
+                        $record['message']
+                    );
                     return $record;
                 });
-                $stack->unshift(
-                    Middleware::log(
-                        $oLogger->pushHandler(
-                            new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt')
-                        ),
-                        new MessageFormatter($messageFormat)
-                    )
+                $oLogger->pushHandler(
+                    new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt')
                 );
+                (new \Monolog\ErrorHandler($oLogger))->registerErrorHandler();
+
+                $stack->unshift(Middleware::log(
+                    $oLogger,
+                    new MessageFormatter($messageFormat)
+                ));
             });
             $this->stack = $stack;
         }
