@@ -333,6 +333,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                             'RocketChatAuthToken',
                             Utils::EncryptValue($mResult->data->authToken),
                             \strtotime('+' . $iAuthTokenCookieExpireTime . ' days'),
+                            true,
                             $sSameSite
                         );
 
@@ -340,6 +341,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                             'RocketChatUserId',
                             $mResult->data->userId,
                             \strtotime('+' . $iAuthTokenCookieExpireTime . ' days'),
+                            true,
                             $sSameSite
                         );
 
@@ -911,12 +913,14 @@ class Module extends \Aurora\System\Module\AbstractModule
             'RocketChatAuthToken',
             '',
             -1,
+            true,
             $sSameSite
         );
         \Aurora\System\Api::setCookie(
             'RocketChatUserId',
             '',
             -1,
+            true,
             $sSameSite
         );
     }
