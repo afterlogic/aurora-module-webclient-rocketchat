@@ -96,45 +96,44 @@ class Module extends \Aurora\System\Module\AbstractModule
      */
     public function GetSettings($TenantId = null)
     {
+        $aResult = [];
         Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
-        $sChatUrl = '';
-        $sAdminUsername = '';
-
-        $oSettings = $this->oModuleSettings;
-        if (!empty($TenantId)) {
-            Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
-            $oTenant = Api::getTenantById($TenantId);
-
-            if ($oTenant) {
-                $sChatUrl = $oSettings->GetTenantValue($oTenant->Name, 'ChatUrl', $sChatUrl);
-                $sAdminUsername = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', $sAdminUsername);
-            }
-        } else {
-            $sChatUrl = $oSettings->ChatUrl;
-            $sAdminUsername = $oSettings->AdminUsername;
-        }
-
         $oUser = \Aurora\System\Api::getAuthenticatedUser();
-        if ($oUser instanceof \Aurora\Modules\Core\Models\User) {
+        if ($oUser) {
+            $sChatUrl = '';
+            $sAdminUsername = '';
+
+            $oSettings = $this->oModuleSettings;
+            if (!empty($TenantId)) {
+                Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
+                $oTenant = Api::getTenantById($TenantId);
+
+                if ($oTenant && ($oUser->isAdmin() || $oUser->IdTenant === $oTenant->Id)) {
+                    $sChatUrl = $oSettings->GetTenantValue($oTenant->Name, 'ChatUrl', $sChatUrl);
+                    $sAdminUsername = $oSettings->GetTenantValue($oTenant->Name, 'AdminUsername', $sAdminUsername);
+                }
+            } else {
+                $sChatUrl = $oSettings->ChatUrl;
+                $sAdminUsername = $oSettings->AdminUsername;
+            }
+
             if ($oUser->isNormalOrTenant()) {
-                $oSettings = $this->oModuleSettings;
-                $mResult = [
+                $aResult = [
                     'ChatUrl' => $sChatUrl,
                     'AllowAddMeetingLinkToEvent' => $this->oModuleSettings->AllowAddMeetingLinkToEvent,
                     'MeetingLinkUrl' => $this->oModuleSettings->MeetingLinkUrl
                 ];
 
-                return $mResult;
-            } elseif ($oUser->Role === UserRole::SuperAdmin) {
-                return [
+            } elseif ($oUser->isAdmin()) {
+                $aResult = [
                     'ChatUrl' => $sChatUrl,
                     'AdminUsername' => $sAdminUsername
                 ];
             }
         }
 
-        return [];
+        return $aResult;
     }
 
     /**
@@ -152,8 +151,9 @@ class Module extends \Aurora\System\Module\AbstractModule
         if (!empty($TenantId)) {
             Api::checkUserRoleIsAtLeast(UserRole::TenantAdmin);
             $oTenant = Api::getTenantById($TenantId);
+            $oUser = Api::getAuthenticatedUser();
 
-            if ($oTenant) {
+            if ($oTenant && $oUser->IdTenant === $oTenant->Id) {
                 $aValues = [
                     'ChatUrl' => $ChatUrl,
                     'AdminUsername' => $AdminUsername
@@ -529,7 +529,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         if (\is_string($sResult)) {
             echo strtr($sResult, [
                 '{{TOKEN}}' => $aUser ? $aUser['authToken'] : '',
-                '{{URL}}' => $this->sChatUrl . $sUrl,
+                '{{URL}}' => rtrim($this->sChatUrl, '/') . '/' . $sUrl,
                 '{{IntegratorLinks}}' => $sIntegratorLinks,
             ]);
         }
