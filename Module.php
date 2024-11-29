@@ -350,7 +350,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
                     if ($mResult && isset($mResult->data)) {
                         $iAuthTokenCookieExpireTime = (int) CoreModule::getInstance()->oModuleSettings->AuthTokenCookieExpireTime;
-                        $sSameSite = CoreModule::getInstance()->oModuleSettings->AuthTokenCookieSameSite;
+                        $sSameSite = CoreModule::getInstance()->oModuleSettings->CookieSameSite;
 
                         Api::setCookie(
                             'RocketChatAuthToken',
@@ -1019,7 +1019,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     public function onAfterLogout($aArgs, &$mResult)
     {
-        $sSameSite = CoreModule::getInstance()->oModuleSettings->AuthTokenCookieSameSite;
+        $sSameSite = CoreModule::getInstance()->oModuleSettings->CookieSameSite;
 
         \Aurora\System\Api::setCookie(
             'RocketChatAuthToken',
