@@ -18,7 +18,6 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\MessageFormatter;
 use GuzzleHttp\Middleware;
-use Illuminate\Support\Str;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 
@@ -193,6 +192,12 @@ class Module extends \Aurora\System\Module\AbstractModule
         return false;
     }
 
+    /**
+     * This method returns the set of RocketChat settings that should havep artucular values.
+     *
+     * @param int|null $TenantId
+     * @return array
+     */
     public function GetRocketChatSettings($TenantId = null)
     {
         \Aurora\System\Api::checkUserRoleIsAtLeast(UserRole::SuperAdmin);
@@ -205,6 +210,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     /**
      * Applies some settings to RocketChat to achive better integration with Aurora
+     *
+     * @param int|null $TenantId
+     * @return bool
      */
     public function ApplyRocketChatRequiredChanges($TenantId = null)
     {
@@ -218,6 +226,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     /**
      * Applies some text changes to RocketChat like user's home page.
+     *
+     * @param int|null $TenantId
+     * @return bool
      */
     public function ApplyRocketChatTextChanges($TenantId = null)
     {
@@ -231,6 +242,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     /**
      * Applies css theme tweeks to match RocketChat custome theme to Aurora's one
+     *
+     * @param int|null $TenantId
+     * @return bool
      */
     public function ApplyRocketChatCssChanges($TenantId = null)
     {
@@ -242,6 +256,9 @@ class Module extends \Aurora\System\Module\AbstractModule
         );
     }
 
+    /**
+     * This method handles direct chat entry point which can be used to start personal chat with a contact.
+     */
     public function EntryChatDirect()
     {
         try {
@@ -252,10 +269,10 @@ class Module extends \Aurora\System\Module\AbstractModule
             $oContact = ContactsModule::Decorator()->GetContact($sContactUuid, $oCurrentUser->Id);
             $oUser = $oContact ? Api::getUserById($oContact->IdUser) : null;
             if ($oCurrentUser && $oUser && $oCurrentUser->IdTenant === $oUser->IdTenant) {
-                $sDirect = $this->GetLoginForEmail($oUser->PublicId);
+                $sChatLogin = $this->GetLoginForEmail($oUser->PublicId);
 
-                if ($sDirect) {
-                    $this->showChat('direct/' . $sDirect . '?layout=embedded');
+                if ($sChatLogin) {
+                    $this->showChat('direct/' . $sChatLogin . '?layout=embedded');
                 } else {
                     $this->showError('User not found');
                 }
@@ -267,12 +284,18 @@ class Module extends \Aurora\System\Module\AbstractModule
         }
     }
 
+    /**
+     * This method handles direct chat entry point which is used to open RocketChat UI in a separate window.
+     */
     public function EntryChat()
     {
         $oIntegrator = \Aurora\System\Managers\Integrator::getInstance();
         $this->showChat('', $oIntegrator->buildHeadersLink());
     }
 
+    /**
+     *
+     */
     public function InitChat()
     {
         if (!$this->curUserData) {
@@ -360,6 +383,9 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $this->curUserData;
     }
 
+    /**
+     * Returns RocketChat user's login for currently logged in user.
+     */
     public function GetLoginForCurrentUser()
     {
         $mResult = false;
@@ -372,6 +398,13 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     * This method allows to get RocketChat login for a provided email address.
+     * If RocketChat account is missing it will be created
+     *
+     * @param string $Email
+     * @return string|false
+     */
     public function GetLoginForEmail($Email)
     {
         $mResult = false;
@@ -386,9 +419,14 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     * Returns number of unread messages for currently logged in user.
+     *
+     * @return int
+     */
     public function GetUnreadCounter()
     {
-        $mResult = 0;
+        $iResult = 0;
         $aCurUser = $this->InitChat();
         if ($aCurUser && $this->client) {
             try {
@@ -403,7 +441,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                     $aResponse = \json_decode($res->getBody(), true);
                     if (is_array($aResponse['update'])) {
                         foreach ($aResponse['update'] as $update) {
-                            $mResult += $update['unread'];
+                            $iResult += $update['unread'];
                         }
                     }
                 }
@@ -411,9 +449,15 @@ class Module extends \Aurora\System\Module\AbstractModule
             }
         }
 
-        return $mResult;
+        return $iResult;
     }
 
+    /**
+     * Returns number of unread messages for a provided user.
+     *
+     * @param int|null $iTenantId
+     * @return \GuzzleHttp\Client|null
+     */
     protected function getClient($iTenantId = null)
     {
         $mResult = null;
@@ -441,6 +485,9 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     * Initializes chat client
+     */
     protected function initConfig()
     {
         $this->sChatUrl = $this->oModuleSettings->ChatUrl;
@@ -457,6 +504,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     /**
      * Checks if current user is a demo user
+     *
      * @param string $sEmail
      * @return bool
      */
@@ -473,6 +521,9 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $bDemo;
     }
 
+    /**
+     * Initializes RocketChat logging
+     */
     protected function initLogging()
     {
         if ($this->oModuleSettings->EnableLogging && !$this->stack) {
@@ -510,18 +561,31 @@ class Module extends \Aurora\System\Module\AbstractModule
         }
     }
 
+    /**
+     * Initializes RocketChat client
+     *
+     * @return bool
+     */
     protected function initUser()
     {
-        $mResult = true;
+        $bResult = true;
         if (!$this->getCurrentUserInfo()) {
             if (!$this->createCurrentUser()) {
-                $mResult = false;
+                $bResult = false;
             }
         }
 
-        return $mResult;
+        return $bResult;
     }
 
+    /**
+     * Outputs HTML for chat page
+     *
+     * @param string $sUrl
+     * @param string $sIntegratorLinks
+     *
+     * @return void
+     */
     protected function showChat($sUrl = '', $sIntegratorLinks = '')
     {
         $aUser = $this->InitChat();
@@ -535,11 +599,22 @@ class Module extends \Aurora\System\Module\AbstractModule
         }
     }
 
+    /**
+     * Outputs text error
+     *
+     * @param string $sMessage
+     */
     protected function showError($sMessage = '')
     {
         echo $sMessage;
     }
 
+    /**
+     * Calculates RocketChat username from user's email depending on module settings
+     *
+     * @param string $sEmail
+     * @return string|false
+     */
     protected function getUserNameFromEmail($sEmail)
     {
         $mResult = false;
@@ -563,6 +638,13 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     * Returs an Rocket Chat admin credentionals
+     *
+     * @param int|null $TenantId
+     * @param bool $EncrypdedPassword
+     * @return array|false
+     */
     protected function getAdminCredentials($TenantId = null, $EncrypdedPassword = true)
     {
         static $mResult = false;
@@ -598,6 +680,13 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     * Obtains RocketChat token for admin user
+     *
+     * @param int $TenantId
+     * @param array $aAdminCreds
+     * @return object|false
+     */
     protected function loginAdminAccount($TenantId, $aAdminCreds)
     {
         $mResult = false;
@@ -622,6 +711,10 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     * @param int|null $TenantId
+     * @return object|false
+     */
     protected function getAdminAccount($TenantId = null)
     {
         $mResult = false;
@@ -643,6 +736,10 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     * @param int|null $TenantId
+     * @return array
+     */
     protected function getAdminHeaders($TenantId = null)
     {
         $oAdmin = $this->getAdminAccount($TenantId);
@@ -658,6 +755,12 @@ class Module extends \Aurora\System\Module\AbstractModule
         return [];
     }
 
+    /**
+     * Returns RocketChat user info
+     *
+     * @param int $sEmail
+     * @return object|false
+     */
     protected function getUserInfo($sEmail)
     {
         $mResult = false;
@@ -683,6 +786,9 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     *
+     */
     protected function getCurrentUserInfo()
     {
         $mResult = false;
@@ -695,6 +801,12 @@ class Module extends \Aurora\System\Module\AbstractModule
         return $mResult;
     }
 
+    /**
+     * Creates an user account in RocketChat
+     *
+     * @param string $sEmail
+     * @return object|false
+     */
     protected function createUser($sEmail)
     {
         $mResult = false;
@@ -763,7 +875,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                 try {
                     $res = $this->client->post('login', [
                         'form_params' => [
-                        'user' => $this->getUserNameFromEmail($oUser->PublicId),
+                            'user' => $this->getUserNameFromEmail($oUser->PublicId),
                             'password' => $sPassword
                         ],
                         'http_errors' => false
