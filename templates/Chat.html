@@ -1,23 +1,22 @@
 <html>
-    <head>
-		<link rel="icon" sizes="196x196" type="image/png" href="static/styles/images/logo_140x140.png" />
-		<link rel="apple-touch-icon-precomposed" type="image/png" href="static/styles/images/logo_140x140.png" />
-		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
-		{{IntegratorLinks}}
-        <style>body {margin: 0px; }</style>
-        <script type='text/javascript'>
-            function reroute() {
-                var token = '{{TOKEN}}';
-                if (token !== '') {
-                    document.querySelector('iframe').contentWindow.postMessage({
-                        externalCommand: 'login-with-token',
-                        token: token
-                    }, '*');
-                }
+<head>
+    <link rel="icon" sizes="196x196" type="image/png" href="static/styles/images/logo_140x140.png" />
+    <link rel="apple-touch-icon-precomposed" type="image/png" href="static/styles/images/logo_140x140.png" />
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+    {{IntegratorLinks}}
+    <script type='text/javascript'>
+        function onload() {
+            const token = '{{TOKEN}}'
+            if (token !== '') {
+                document.querySelector('iframe').contentWindow.postMessage({
+                    externalCommand: 'login-with-token',
+                    token: token
+                }, '*')
             }
-        </script>
-    </head>
-    <body onload='reroute()'>
-		<iframe id="chatIframe" src="{{URL}}" style="border-width: 0px; width: 100%; height: 100%;"></iframe>
-	</body>
+        }
+    </script>
+</head>
+<body onload="onload()">
+    <iframe src="{{URL}}" style="border-width: 0px; width: 100%; height: 100%;"></iframe>
+</body>
 </html>
