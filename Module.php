@@ -8,6 +8,7 @@
 namespace Aurora\Modules\RocketChatWebclient;
 
 use Aurora\Api;
+use Aurora\Modules\Contacts\Enums\StorageType;
 use Aurora\Modules\Contacts\Module as ContactsModule;
 use Aurora\Modules\Core\Module as CoreModule;
 use Aurora\System\Enums\UserRole;
@@ -267,9 +268,19 @@ class Module extends \Aurora\System\Module\AbstractModule
             $sContactUuid = $this->oHttp->GetQuery('chat-direct');
             $oCurrentUser = Api::getAuthenticatedUser();
             $oContact = ContactsModule::Decorator()->GetContact($sContactUuid, $oCurrentUser->Id);
-            $oUser = $oContact ? Api::getUserById($oContact->IdUser) : null;
-            if ($oCurrentUser && $oUser && $oCurrentUser->IdTenant === $oUser->IdTenant) {
-                $sChatLogin = $this->GetLoginForEmail($oUser->PublicId);
+            $sUserPublicId = null;
+            if ($oContact) {
+                if ($oContact->Storage === StorageType::Team) {
+                    $sUserPublicId = $oContact->ViewEmail;
+                } else {
+                    $oUser = $oContact ? Api::getUserById($oContact->IdUser) : null;
+                    if ($oUser && $oCurrentUser && $oCurrentUser->IdTenant === $oUser->IdTenant) {
+                        $sUserPublicId = $oUser->PublicId;
+                    }
+                }
+            }
+            if ($sUserPublicId) {
+                $sChatLogin = $this->GetLoginForEmail($sUserPublicId);
 
                 if ($sChatLogin) {
                     $this->showChat('direct/' . $sChatLogin . '?layout=embedded');
