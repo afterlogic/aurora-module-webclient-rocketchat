@@ -1,4 +1,7 @@
 <div class="screen RocketChat" style="display: none;">
-	<iframe id="rocketchat_iframe" data-bind="attr: { 'src': sChatUrl }, event: { 'load': onFrameLoad }, initDom: iframeDom"
+	<iframe id="rocketchat_iframe" data-bind="attr: { 'src': sChatUrl }, initDom: iframeDom, visible: initialized()"
 			frameborder="0" height="100%" width="100%" style="overflow:hidden;height:100%;width:100%;display:block;"></iframe>
+	<span class="list_notification" data-bind="visible: !initialized()"  style="overflow:hidden; height:100%; width:100%; display:block; background-color: white;"> 
+		<span class="description" data-bind="i18n: {'key': 'COREWEBCLIENT/INFO_LOADING'}"></span>
+	</span>
 </div>

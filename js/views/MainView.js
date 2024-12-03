@@ -24,15 +24,15 @@ function CMainView()
 {
 	CAbstractScreenView.call(this, '%ModuleName%')
 	
-	this.bInitialized = false
+	this.initialized = ko.observable(false)
 	this.sChatUrl = Settings.ChatUrl
 	this.iframeDom = ko.observable(null)
 	this.iframeLoaded = ko.observable(false)
 	this.chatToken = ko.observable('')
 
 	ko.computed(function () {
-		if (this.iframeDom() && this.iframeLoaded() && this.chatToken()) {
-			this.init(this.chatToken())
+		if (this.iframeDom() && this.chatToken() && this.iframeLoaded()) {
+			this.init()
 		}
 	}, this)
 
@@ -41,6 +41,22 @@ function CMainView()
 			this.chatToken(oResponse.Result['authToken'])
 		}
 	}, this);
+
+	window.addEventListener('message', function(oEvent) {
+		if (oEvent && oEvent.data) {
+			if(oEvent.data.eventName === 'startup') {
+				this.iframeLoaded(true)
+			}
+			if(oEvent.data.eventName === 'notification') {
+				this.showNotification(oEvent.data.data.notification)
+			}
+
+			if (oEvent.data.eventName === 'unread-changed') {
+				const HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js')
+				HeaderItemView.unseenCount(Types.pInt(oEvent.data.data))
+			}
+		}
+	}.bind(this))
 }
 
 _.extendOwn(CMainView.prototype, CAbstractScreenView.prototype)
@@ -48,54 +64,25 @@ _.extendOwn(CMainView.prototype, CAbstractScreenView.prototype)
 CMainView.prototype.ViewTemplate = '%ModuleName%_MainView'
 CMainView.prototype.ViewConstructorName = 'CMainView'
 
-CMainView.prototype.onFrameLoad = function () {
-	this.iframeLoaded(true)
-}
+CMainView.prototype.init = function () {
+	if (!this.initialized()) {
+		var 
+			iframe = document.getElementById('rocketchat_iframe'),
+			self = this
+		;
+		iframe.contentWindow.postMessage({
+			externalCommand: 'login-with-token',
+			token: self.chatToken()
+		}, '*')
 
-CMainView.prototype.init = function (sChatAuthToken) {
-	if (!this.bInitialized) {
-		var iframe = this.iframeDom()[0];
-		function _login() {
+		setTimeout(() => {
 			iframe.contentWindow.postMessage({
-				externalCommand: 'login-with-token',
-				token: sChatAuthToken
-			}, '*')
-		}
-		window.addEventListener('message', function(oEvent) {
-			if (oEvent && oEvent.data) {
-				console.log('iframe message:', oEvent.data.eventName)
-
-				if (oEvent.data.eventName === 'startup') {
-					setTimeout(_login, 500)
-				}
-
-				if(oEvent.data.eventName === 'notification') {
-					this.showNotification(oEvent.data.data.notification)
-				}
-
-				if (oEvent.data.eventName === 'unread-changed') {
-					const HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js')
-					HeaderItemView.unseenCount(Types.pInt(oEvent.data.data))
-				}
-			}
-		}.bind(this))
-		
-		this.setAuroraThemeToRocketChat(iframe)
-		
-		this.bInitialized = true
+				externalCommand: 'set-aurora-theme',
+				theme: UserSettings.Theme
+			}, '*');
+			self.initialized(true)
+		}, 2000)
 	}
-}
-
-CMainView.prototype.setAuroraThemeToRocketChat = function (oIframe) {
-	function _setTheme() {
-		oIframe.contentWindow.postMessage({
-			externalCommand: 'set-aurora-theme',
-			theme: UserSettings.Theme
-		}, '*');
-	}
-	setTimeout(_setTheme, 500) // to apply the theme more immediate if possible
-	setTimeout(_setTheme, 1000) // this will most likely work first
-	setTimeout(_setTheme, 2000) // to be sure the theme will be applied
 }
 
 CMainView.prototype.showNotification = function (oNotification) {
