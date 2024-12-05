@@ -92,6 +92,8 @@ class Module extends \Aurora\System\Module\AbstractModule
     /**
      * Obtains list of module settings for authenticated user.
      *
+     * @param int|null $TenantId Tenant ID
+     *
      * @return array
      */
     public function GetSettings($TenantId = null)
