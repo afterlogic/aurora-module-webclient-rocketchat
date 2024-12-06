@@ -155,7 +155,7 @@ class Module extends \Aurora\System\Module\AbstractModule
             $oTenant = Api::getTenantById($TenantId);
             $oUser = Api::getAuthenticatedUser();
 
-            if ($oTenant && $oUser->IdTenant === $oTenant->Id) {
+            if ($oTenant && ($oUser->isAdmin() || $oUser->IdTenant === $oTenant->Id)) {
                 $aValues = [
                     'ChatUrl' => $ChatUrl,
                     'AdminUsername' => $AdminUsername
