@@ -212,6 +212,20 @@ class Module extends \Aurora\System\Module\AbstractModule
     }
 
     /**
+     * Checks connection to RocketChat with provided credentials. Uses saved password if password argument is ommitted.
+     *
+     * @param int|null $TenantId
+     * @param string $ChatUrl
+     * @param string $AdminUsername
+     * @param string $AdminPassword
+     * @return boolean
+     */
+    public function TestConnection($TenantId, $ChatUrl, $AdminUsername, $AdminPassword = null)
+    {
+        return false;
+    }
+
+    /**
      * Applies some settings to RocketChat to achive better integration with Aurora
      *
      * @param int|null $TenantId

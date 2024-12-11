@@ -19,7 +19,7 @@
                 <q-input outlined dense bg-color="white" v-model="adminUsername" />
               </div>
             </div>
-            <div class="row">
+            <div class="row q-mb-md">
               <div class="col-2 q-mt-sm" v-t="'ROCKETCHATWEBCLIENT.ADMIN_PASSWORD_LABEL'"></div>
               <div class="col-5">
                 <q-input
@@ -30,6 +30,21 @@
                   autocomplete="new-password"
                   v-model="adminPassword"
                 />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-2 q-my-sm"></div>
+              <div class="col-5">
+                <q-btn
+                  unelevated
+                  no-caps
+                  dense
+                  class="q-px-sm"
+                  :ripple="false"
+                  color="primary"
+                  :loading="testingConnection"
+                  :label="$t('ADMINPANELWEBCLIENT.BUTTON_TEST_CONNECTION')" @click="testConnection">
+                </q-btn>
               </div>
             </div>
           </q-card-section>
@@ -126,7 +141,7 @@ import webApi from 'src/utils/web-api'
 
 import SystemSettings from './SystemSettings'
 
-const FAKE_PASS = '      '
+const FAKE_PASS = '******'
 
 export default {
   name: 'RocketChatAdminSettingPerTenant',
@@ -137,7 +152,6 @@ export default {
 
   data() {
     return {
-      // unmounted: false,
       chatUrl: '',
       adminUsername: '',
       adminPassword: FAKE_PASS,
@@ -145,6 +159,7 @@ export default {
       saving: false,
       loading: false,
       tenant: null,
+      testingConnection: false,
 
       showSaveBeforeApplyWarning: false,
       applyTextChangesInProgress: false,
@@ -369,6 +384,34 @@ export default {
             )
           }
         )
+    },
+
+    testConnection() {
+      if (!this.testingConnection) {
+        this.testingConnection = true
+        const parameters = {
+          Url: this.chatUrl,
+          Username: this.adminUsername,
+        }
+        if (FAKE_PASS !== this.adminPassword) {
+          parameters.Password = this.adminPassword
+        }
+        webApi.sendRequest({
+          moduleName: 'RocketChatWebclient',
+          methodName: 'TestConnection',
+          parameters,
+        }).then(result => {
+          this.testingConnection = false
+          if (result === true) {
+            notification.showReport(this.$t('ADMINPANELWEBCLIENT.REPORT_CONNECT_SUCCESSFUL'))
+          } else {
+            notification.showError(this.$t('ADMINPANELWEBCLIENT.ERROR_CONNECT_FAILED'))
+          }
+        }, response => {
+          this.testingConnection = false
+          notification.showError(errors.getTextFromResponse(response, this.$t('ADMINPANELWEBCLIENT.ERROR_CONNECT_FAILED')))
+        })
+      }
     },
   },
 }
