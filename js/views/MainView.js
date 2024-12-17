@@ -7,6 +7,8 @@ var
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 	Utils = require('%PathToCoreWebclientModule%/js/utils/Common.js'),
 	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
+	Screens = require('%PathToCoreWebclientModule%/js/Screens.js'),
+	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 
 	CAbstractScreenView = require('%PathToCoreWebclientModule%/js/views/CAbstractScreenView.js'),
 	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
@@ -31,6 +33,7 @@ function CMainView()
 	this.iframeDom = ko.observable(null)
 	this.iframeLoaded = ko.observable(false)
 	this.chatToken = ko.observable('')
+	this.infoMessage = ko.observable(TextUtils.i18n('COREWEBCLIENT/INFO_LOADING'))
 
 	ko.computed(function () {
 		if (this.iframeDom() && this.chatToken() && this.iframeLoaded()) {
@@ -42,6 +45,8 @@ function CMainView()
 		if(oResponse.Result && oResponse.Result['authToken']) {
 			this.chatToken(oResponse.Result['authToken'])
 			HeaderItemView.unseenCount(Types.pInt(oResponse.Result['unreadCounter']))
+		} else {
+			this.infoMessage(TextUtils.i18n('%MODULENAME%/ERROR_INIT_CHAT'))
 		}
 	}, this);
 
