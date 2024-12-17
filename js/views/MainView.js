@@ -12,7 +12,9 @@ var
 	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
 	UserSettings = require('%PathToCoreWebclientModule%/js/Settings.js'),
 
-	Settings = require('modules/%ModuleName%/js/Settings.js')
+	Settings = require('modules/%ModuleName%/js/Settings.js'),
+
+	HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js')
 ;
 
 /**
@@ -39,6 +41,7 @@ function CMainView()
 	Ajax.send(Settings.ServerModuleName,'InitChat', {}, function(oResponse) {
 		if(oResponse.Result && oResponse.Result['authToken']) {
 			this.chatToken(oResponse.Result['authToken'])
+			HeaderItemView.unseenCount(Types.pInt(oResponse.Result['unreadCounter']))
 		}
 	}, this);
 
@@ -52,7 +55,6 @@ function CMainView()
 			}
 
 			if (oEvent.data.eventName === 'unread-changed') {
-				const HeaderItemView = require('modules/%ModuleName%/js/views/HeaderItemView.js')
 				HeaderItemView.unseenCount(Types.pInt(oEvent.data.data))
 			}
 		}

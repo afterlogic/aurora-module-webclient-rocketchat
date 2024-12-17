@@ -50,6 +50,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 
     protected $curUserData = false;
 
+    protected $curUserInfo = false;
+
     /**
      * @return Module
      */
@@ -331,6 +333,7 @@ class Module extends \Aurora\System\Module\AbstractModule
             if ($oUser && $this->client && $this->initUser()) {
                 $sAuthToken = isset($_COOKIE['RocketChatAuthToken']) ? $_COOKIE['RocketChatAuthToken'] : null;
                 $sUserId = isset($_COOKIE['RocketChatUserId']) ? $_COOKIE['RocketChatUserId'] : null;
+
                 if ($sAuthToken !== null && $sUserId !== null) {
                     $sAuthToken = Utils::DecryptValue($sAuthToken);
                     Api::AddSecret($sAuthToken);
@@ -353,10 +356,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                                 $this->updateLanguage($sUserId, $sAuthToken, $sUserLang);
                             }
 
-                            $mResult = [
-                                'authToken' => $sAuthToken,
-                                'userId' => $sUserId
-                            ];
+                            $mResult = true;
                         }
                     } catch (ConnectException $oException) {
                     }
@@ -364,24 +364,28 @@ class Module extends \Aurora\System\Module\AbstractModule
 
                 if (!$mResult) {
                     $currentUserInfo = $this->getCurrentUserInfo();
+                    $mLoginResult = false;
                     if ($currentUserInfo) {
-                        $mResult = $this->loginCurrentUser();
-                        if (!$mResult && !$this->isDemoUser($oUser->PublicId)) {
+                        $mLoginResult = $this->loginCurrentUser();
+                        if (!$mLoginResult && !$this->isDemoUser($oUser->PublicId)) {
                             if ($this->updateUserPassword($currentUserInfo)) {
-                                $mResult = $this->loginCurrentUser();
+                                $mLoginResult = $this->loginCurrentUser();
                             }
                         }
                     } elseif ($this->createCurrentUser() !== false) {
-                        $mResult = $this->loginCurrentUser();
+                        $mLoginResult = $this->loginCurrentUser();
                     }
 
-                    if ($mResult && isset($mResult->data)) {
+                    if ($mLoginResult && isset($mLoginResult->data)) {
                         $iAuthTokenCookieExpireTime = (int) CoreModule::getInstance()->oModuleSettings->AuthTokenCookieExpireTime;
                         $sSameSite = CoreModule::getInstance()->oModuleSettings->CookieSameSite;
 
+                        $sAuthToken = $mLoginResult->data->authToken;
+                        $sUserId = $mLoginResult->data->userId;
+
                         Api::setCookie(
                             'RocketChatAuthToken',
-                            Utils::EncryptValue($mResult->data->authToken),
+                            Utils::EncryptValue($sAuthToken),
                             \strtotime('+' . $iAuthTokenCookieExpireTime . ' days'),
                             true,
                             $sSameSite
@@ -389,18 +393,22 @@ class Module extends \Aurora\System\Module\AbstractModule
 
                         Api::setCookie(
                             'RocketChatUserId',
-                            $mResult->data->userId,
+                            $sUserId,
                             \strtotime('+' . $iAuthTokenCookieExpireTime . ' days'),
                             true,
                             $sSameSite
                         );
 
                         $oUser->save();
-                        $mResult = [
-                            'authToken' => $mResult->data->authToken,
-                            'userId' => $mResult->data->userId
-                        ];
                     }
+                }
+
+                if ($sAuthToken && $sUserId) {
+                    $mResult = [
+                        'authToken' => $sAuthToken,
+                        'userId' => $sUserId,
+                        'unreadCounter' => $this->getUnreadCounter($sUserId, $sAuthToken)
+                    ];
                 }
             }
 
@@ -451,16 +459,15 @@ class Module extends \Aurora\System\Module\AbstractModule
      *
      * @return int
      */
-    public function GetUnreadCounter()
+    protected function getUnreadCounter($sUserId, $sToken)
     {
         $iResult = 0;
-        $aCurUser = $this->InitChat();
-        if ($aCurUser && $this->client) {
+        if ($this->client) {
             try {
                 $res = $this->client->get('subscriptions.get', [
                     'headers' => [
-                        "X-Auth-Token" => $aCurUser['authToken'],
-                        "X-User-Id" => $aCurUser['userId'],
+                        "X-Auth-Token" => $sToken,
+                        "X-User-Id" => $sUserId,
                     ],
                     'http_errors' => false
                 ]);
@@ -556,9 +563,12 @@ class Module extends \Aurora\System\Module\AbstractModule
         if ($this->oModuleSettings->EnableLogging && !$this->stack) {
             $stack = HandlerStack::create();
             $oLogger = new Logger('rocketchat');
+            $handler = new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt');
+            $oLogger->pushHandler($handler);
+            (new \Monolog\ErrorHandler($oLogger))->registerErrorHandler();
             collect([
-                'REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}',
-                'RESPONSE: {code} - {res_body}',
+                "REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}",
+                "RESPONSE: {code} - {res_body}",
             ])->each(function ($messageFormat) use ($stack, $oLogger) {
                 // We'll use unshift instead of push, to add the middleware to the bottom of the stack, not the top
                 $oLogger->pushProcessor(function ($record) {
@@ -574,10 +584,6 @@ class Module extends \Aurora\System\Module\AbstractModule
                     );
                     return $record;
                 });
-                $oLogger->pushHandler(
-                    new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt')
-                );
-                (new \Monolog\ErrorHandler($oLogger))->registerErrorHandler();
 
                 $stack->unshift(Middleware::log(
                     $oLogger,
@@ -751,7 +757,9 @@ class Module extends \Aurora\System\Module\AbstractModule
         }
 
         $aAdminCreds = $this->getAdminCredentials($TenantId);
-        $mResult = $this->loginAdminAccount($TenantId, $aAdminCreds);
+        if ($aAdminCreds) {
+            $mResult = $this->loginAdminAccount($TenantId, $aAdminCreds);
+        }
         if (!$mResult) {
             $aAdminCreds = $this->getAdminCredentials($TenantId, false);
             $mResult = $this->loginAdminAccount($TenantId, $aAdminCreds);
@@ -796,7 +804,7 @@ class Module extends \Aurora\System\Module\AbstractModule
             if ($this->client) {
                 $res = $this->client->get('users.info', [
                     'query' => [
-                        'username' => $this->getUserNameFromEmail($sEmail)
+                        'username' => $sUserName
                     ],
                     'headers' => $this->getAdminHeaders(),
                     'http_errors' => false
@@ -818,14 +826,14 @@ class Module extends \Aurora\System\Module\AbstractModule
      */
     protected function getCurrentUserInfo()
     {
-        $mResult = false;
-
-        $oUser = Api::getAuthenticatedUser();
-        if ($oUser) {
-            $mResult = $this->getUserInfo($oUser->PublicId);
+        if (!$this->curUserInfo) {
+            $oUser = Api::getAuthenticatedUser();
+            if ($oUser) {
+                $this->curUserInfo = $this->getUserInfo($oUser->PublicId);
+            }
         }
 
-        return $mResult;
+        return $this->curUserInfo;
     }
 
     /**

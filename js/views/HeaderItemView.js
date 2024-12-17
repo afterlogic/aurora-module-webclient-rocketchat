@@ -22,15 +22,7 @@ function CHeaderItemView()
 	this.mainHref = ko.computed(function () {
 		return this.hash();
 	}, this);
-
-	this.getUnreadCounter();
 }
-
-CHeaderItemView.prototype.getUnreadCounter = function () {
-	Ajax.send('GetUnreadCounter', {}, function (oResponse) {
-		this.unseenCount(Types.pInt(oResponse.Result));
-	}, this);
-};
 
 CHeaderItemView.prototype.onChatClick = function (data, event)
 {
