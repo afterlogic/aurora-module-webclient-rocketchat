@@ -565,7 +565,10 @@ class Module extends \Aurora\System\Module\AbstractModule
             $oLogger = new Logger('rocketchat');
             $handler = new RotatingFileHandler(Api::GetLogFileDir() . 'rocketchat-log.txt');
             $oLogger->pushHandler($handler);
-            (new \Monolog\ErrorHandler($oLogger))->registerErrorHandler();
+            //set your own exception handler so that the exception caused by logging does not interrupt the logic of the main code
+            $oLogger->setExceptionHandler(function ($e) {
+                Api::LogException($e);
+            });
             collect([
                 "REQUEST: {method} - {uri} - HTTP/{version} - {req_headers} - {req_body}",
                 "RESPONSE: {code} - {res_body}",
