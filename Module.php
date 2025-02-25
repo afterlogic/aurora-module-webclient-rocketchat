@@ -224,7 +224,86 @@ class Module extends \Aurora\System\Module\AbstractModule
      */
     public function TestConnection($TenantId, $ChatUrl, $AdminUsername, $AdminPassword = null)
     {
-        return false;
+        $bResult = false;
+
+        $oAuthenticatedUser = Api::getAuthenticatedUser();
+
+        if ($oAuthenticatedUser && $oAuthenticatedUser->isAdmin()
+            || ($oAuthenticatedUser->Role === UserRole::TenantAdmin && $oAuthenticatedUser->IdTenant === $TenantId)) {
+            // getting saved password if it was not provided
+            if ($AdminPassword === null) {
+                if (isset($TenantId)) {
+                    $oTenant = Api::getTenantById($TenantId);
+
+                    if ($oTenant) {
+                        $AdminPassword = $this->oModuleSettings->GetTenantValue($oTenant->Name, 'AdminPassword', '');
+                    } else {
+                        throw new ApiException(\Aurora\System\Notifications::InvalidInputParameter);
+                    }
+                } else {
+                    $AdminPassword = $this->oModuleSettings->AdminPassword;
+                }
+
+                $sDecryptedPassword = Utils::DecryptValue($AdminPassword);
+                // use decripted password if it was not decrypted successfully
+                if ($sDecryptedPassword !== false) {
+                    $AdminPassword = $sDecryptedPassword;
+                }
+            }
+
+            if ($ChatUrl && $AdminUsername && $AdminPassword) {
+                try {
+                    $client = new Client([
+                        'base_uri' => \rtrim($ChatUrl, '/') . '/api/v1/',
+                        'verify' => false,
+                        'handler' => $this->stack
+                    ]);
+
+                    if ($client) {
+                        $loginResponse = $client->post('login', [
+                            'form_params' => [
+                                'user' => $AdminUsername,
+                                'password' => $AdminPassword,
+                            ],
+                            'http_errors' => false
+                        ]);
+
+                        $loginData = json_decode($loginResponse->getBody(), true);
+
+                        // Check if the login was successful
+                        if ($loginData['status'] === 'success') {
+                            // Step 2: Use the auth token to validate the connection
+                            $authToken = $loginData['data']['authToken'];
+                            $userId = $loginData['data']['userId'];
+
+                            // Make a test API call (e.g., get user info)
+                            $userInfoResponse = $client->get('users.info', [
+                                'query' => [
+                                    'username' => $AdminUsername
+                                ],
+                                'headers' => [
+                                    'X-Auth-Token' => $authToken,
+                                    'X-User-Id' => $userId,
+                                ],
+                                'http_errors' => false
+                            ]);
+
+                            $bResult = $userInfoResponse->getStatusCode() === 200;
+                        } elseif ($loginData['status'] === 'success' && $loginData['message']) {
+                            throw new ApiException(\Aurora\System\Notifications::InvalidInputParameter, null, $loginData['message']);
+                            // \Aurora\System\Api::Log('RocketChat connection failed: ' . $loginData['message']);
+                        }
+                    }
+                } catch (ConnectException $e) {
+                }
+            } else {
+                throw new ApiException(\Aurora\System\Notifications::InvalidInputParameter);
+            }
+        } else {
+            throw new ApiException(\Aurora\System\Notifications::AccessDenied);
+        }
+
+        return $bResult;
     }
 
     /**

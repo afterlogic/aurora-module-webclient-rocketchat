@@ -317,11 +317,11 @@ export default {
       if (!this.testingConnection) {
         this.testingConnection = true
         const parameters = {
-          Url: this.chatUrl,
-          Username: this.adminUsername,
+          ChatUrl: this.chatUrl,
+          AdminUsername: this.adminUsername,
         }
         if (FAKE_PASS !== this.adminPassword) {
-          parameters.Password = this.adminPassword
+          parameters.AdminPassword = this.adminPassword
         }
         webApi.sendRequest({
           moduleName: 'RocketChatWebclient',
