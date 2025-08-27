@@ -50,20 +50,25 @@ function CMainView()
 		}
 	}, this);
 
-	window.addEventListener('message', function(oEvent) {
-		if (oEvent && oEvent.data) {
-			if(oEvent.data.eventName === 'startup') {
-				this.iframeLoaded(true)
-			}
-			if(oEvent.data.eventName === 'notification') {
-				this.showNotification(oEvent.data.data.notification)
-			}
+	this.iframeDom.subscribe(function (iframeDom) {
+		iframeDom[0].addEventListener('load', () => {
+			window.addEventListener('message', function(oEvent) {
+				if (oEvent && oEvent.data && this.iframeDom() && oEvent.source === this.iframeDom()[0].contentWindow) {
+					// for whatever reason the event isn't sent since RC 7.9.0, so we assume it's loaded if any message is received
+					// if(oEvent.data.eventName === 'startup') {
+						this.iframeLoaded(true)
+					// }
+					if(oEvent.data.eventName === 'notification') {
+						this.showNotification(oEvent.data.data.notification)
+					}
 
-			if (oEvent.data.eventName === 'unread-changed') {
-				HeaderItemView.unseenCount(Types.pInt(oEvent.data.data))
-			}
-		}
-	}.bind(this))
+					if (oEvent.data.eventName === 'unread-changed') {
+						HeaderItemView.unseenCount(Types.pInt(oEvent.data.data))
+					}
+				}
+			}.bind(this))
+		});
+	}, this)
 }
 
 _.extendOwn(CMainView.prototype, CAbstractScreenView.prototype)
