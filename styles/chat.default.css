@@ -146,6 +146,10 @@ body,
   border-radius: 10px;
 }
 
+.embedded-view .messages-container .footer {
+  padding: 20px;
+}
+
 .aurora-theme-Default .rcx-sidebar {
   border-radius: 5px;
 }
