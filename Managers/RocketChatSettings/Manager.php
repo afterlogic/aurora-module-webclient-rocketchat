@@ -69,14 +69,14 @@ class Manager extends \Aurora\System\Managers\AbstractManager
 
     public function setTexts($oClient, $aAdminHeaders)
     {
+        $sSiteName = \Aurora\Modules\Core\Module::getInstance()->oModuleSettings->SiteName;
         $sLayoutHomeBody = '';
         $filename = __DIR__ . '/../../templates/chat.default.home-body.html';
         if (file_exists($filename)) {
-            $sLayoutHomeBody = file_get_contents($filename);
+            $sLayoutHomeBody = str_replace('%SITE_NAME%', $sSiteName, file_get_contents($filename));
         }
         $bLayoutHomeSetSuccess = $this->setSetting('Layout_Home_Body', $sLayoutHomeBody, $oClient, $aAdminHeaders);
 
-        $sSiteName = \Aurora\Modules\Core\Module::getInstance()->oModuleSettings->SiteName;
         $bSiteNameSetSuccess = $this->setSetting('Site_Name', $sSiteName, $oClient, $aAdminHeaders);
 
         return $bLayoutHomeSetSuccess && $bSiteNameSetSuccess;
