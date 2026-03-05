@@ -13,6 +13,7 @@ use Aurora\Modules\Contacts\Module as ContactsModule;
 use Aurora\Modules\Core\Module as CoreModule;
 use Aurora\System\Enums\UserRole;
 use Aurora\System\Exceptions\ApiException;
+use Aurora\System\Facades\Route;
 use Aurora\System\Utils;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
@@ -84,8 +85,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 
         $this->initConfig();
 
-        $this->AddEntry('chat', 'EntryChat');
-        $this->AddEntry('chat-direct', 'EntryChatDirect');
+        Route::add(
+            $this->getName(),
+            [
+                'chat' => 'EntryChat',
+                'chat-direct' => 'EntryChatDirect',
+            ]
+        );
 
         $this->subscribeEvent('Core::DeleteUser::before', array($this, 'onBeforeDeleteUser'));
         $this->subscribeEvent('Core::Logout::after', array($this, 'onAfterLogout'));
