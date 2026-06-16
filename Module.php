@@ -86,7 +86,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         $this->initConfig();
 
         Route::add(
-            $this->getName(),
+            $this,
             [
                 'chat' => 'EntryChat',
                 'chat-direct' => 'EntryChatDirect',
